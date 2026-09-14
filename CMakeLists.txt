@@ -32,6 +32,8 @@ add_library(simple_cad_core STATIC
   src/geometry/primitive.cpp
   src/geometry/object_snap.cpp
   src/scene/scene.cpp
+  src/io/xy_reader.cpp
+  src/io/xy_importer.cpp
   src/render/camera.cpp
   src/ui/command_console.cpp
   src/command/command_tokenizer.cpp
