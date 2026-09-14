@@ -8,7 +8,9 @@ on earlier ones).
 - `geometry/` — the shape types (`PointShape`, `LineShape`, `CircleShape`,
   `RectShape`), the `Primitive` (shape + color + id) and bounding-box math.
   Shapes are stored by value in a `std::variant`; there is no shape base class
-  and no heap allocation involved in owning them.
+  and no heap allocation involved in owning them. `object_snap.hpp` derives
+  the set of "interesting" points (endpoints, midpoints, centers, corners,
+  quadrants) from those shapes, for object-snap matching.
 - `scene/` — `Scene` owns the `std::vector<Primitive>` for the current drawing
   and exposes add/remove/clear and an aggregate bounding box (used by
   `zoom fit`).
@@ -20,14 +22,18 @@ on earlier ones).
 - `ui/` — `CommandConsole` is a UI-agnostic text input + scrollback log; it
   knows nothing about SDL or the interpreter, only a callback fired on submit.
 - `command/` — `Tokenize`/`ParseNumber`/`ParsePoint` turn console text into
-  arguments; `CommandInterpreter` is the state machine that runs commands and
-  drives multi-step, AutoCAD-style point collection (`SubmitPoint`), whether
-  the point comes from typed text or a mouse click.
+  arguments; `pending_command.hpp` defines the `PendingCommand` enum on its
+  own (no other includes), so both `command/` and `render/` can reference it
+  without a dependency cycle; `CommandInterpreter` is the state machine that
+  runs commands and drives multi-step, AutoCAD-style point collection
+  (`SubmitPoint`), whether the point comes from typed text or a mouse click.
 - `app/` — `AppState` is the small bag of shared, mutable settings (current
-  color, grid size/visibility, snap on/off) read and written by both the
-  interpreter and the renderer. `Application` owns the SDL window/renderer,
-  runs the event loop, and wires mouse/keyboard input to the console and
-  interpreter.
+  color, grid size/visibility, grid-snap/object-snap on/off) read and written
+  by both the interpreter and the renderer. `Application` owns the SDL
+  window/renderer, runs the event loop, wires mouse/keyboard input to the
+  console and interpreter, and resolves what a click (or the preview
+  crosshair) should snap to via `ResolveSnap` — object snap first, then grid
+  snap, then the raw cursor position.
 
 ## Why a `std::variant` for shapes
 

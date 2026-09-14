@@ -24,6 +24,7 @@ abort it.
 | `grid on` / `grid off` | | | Toggles grid visibility. |
 | `grid size <n>` | | a positive number | Sets the grid spacing, in world units. |
 | `snap on` / `snap off` | | | Toggles snapping mouse-picked points to the grid. |
+| `osnap on` / `osnap off` | | | Toggles snapping mouse-picked points to existing geometry (endpoints, midpoints, centers, corners, quadrants). |
 | `zoom in` / `zoom out` | | | Zooms by a fixed step, centered on the viewport. |
 | `zoom fit` | `zoom extents` | | Frames every primitive in the scene. |
 | `zoom <factor>` | | a number | Multiplies the current zoom scale by `factor`. |
@@ -41,7 +42,14 @@ abort it.
 
 ## Notes on snapping
 
-`snap on/off` only affects points picked with the mouse — typed coordinates are
-always used exactly as given, since typing already lets you be precise. The grid
-drawn on screen automatically coarsens at low zoom levels to stay readable, but
-the snap spacing itself (`grid size`) is unaffected by that.
+`snap on/off` and `osnap on/off` only affect points picked with the **mouse** —
+typed coordinates are always used exactly as given, since typing already lets
+you be precise. The grid drawn on screen automatically coarsens at low zoom
+levels to stay readable, but the snap spacing itself (`grid size`) is
+unaffected by that.
+
+When both are on, object snap takes priority: if the cursor is within a small
+pixel radius of an existing point/endpoint/midpoint/center/corner/quadrant, a
+click lands exactly on that feature instead of the grid. A cyan square marker
+shows when this is about to happen. See [docs/manual.md](manual.md#5-snapping-grid-and-objects)
+for a walkthrough.

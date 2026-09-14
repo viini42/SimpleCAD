@@ -18,7 +18,8 @@ separate step to "click into" it before you can type.
 From top to bottom, the panel shows:
 
 1. **Status line** — current mouse coordinates, zoom scale, grid size and
-   on/off state, snap on/off state, and the current draw color.
+   on/off state, grid-snap and object-snap on/off state, and the current draw
+   color.
 2. **Log** — the last few lines of output: results of commands, errors, and
    command prompts.
 3. **Prompt line** — either `Ready. Type 'help' for commands.`, or what the
@@ -54,6 +55,12 @@ Click anywhere on the canvas, or type `3,4` and press Enter. The prompt then
 asks for the second point — click again, or type another `x,y`. The line is
 added as soon as the second point is given, however it arrived.
 
+While that second point is pending, the canvas gives live feedback: a
+semi-transparent preview of the shape follows your mouse (a rubber-band line,
+a rectangle stretching to the opposite corner, or a circle from the center to
+the cursor), so you can see exactly what will be added before you click.
+`rect` and `circle` show this same preview once their first point is placed.
+
 `circle` works the same way, except after the center point you can either:
 - click (or type) a second point — the radius becomes the distance from the
   center to that point, or
@@ -71,7 +78,7 @@ If you start a command and change your mind, press **Escape** (or type
 - Type `zoom in`, `zoom out`, or `zoom 2` (multiply the current scale by a
   factor of your choice).
 
-## 5. Grid and snap
+## 5. Snapping: grid and objects
 
 The faint grid lines are spaced `grid size` world units apart (10 by default).
 They automatically get sparser as you zoom out, so the screen doesn't fill
@@ -80,13 +87,22 @@ for snapping.
 
 - `grid off` / `grid on` (or **F7**) — show or hide the grid.
 - `grid size 5` — change the spacing.
-- `snap off` / `snap on` (or **F8**) — when snap is on, points picked with the
-  **mouse** are rounded to the nearest grid intersection. Typed coordinates are
-  always used exactly as typed, snap or no snap — snapping exists to make
-  clicking precise, not to restrict what you can type.
+- `snap off` / `snap on` (or **F8**) — when grid snap is on, points picked with
+  the **mouse** are rounded to the nearest grid intersection.
+- `osnap off` / `osnap on` (or **F9**) — when object snap is on (the default),
+  points picked with the mouse prefer an existing feature — a point, a line's
+  endpoint or midpoint, a circle's center or one of its four quadrant points,
+  or a rectangle's corners — whenever the cursor is close to one. Object snap
+  wins over grid snap when both are on and a feature is nearby.
+
+Typed coordinates are always used exactly as typed, regardless of either snap
+setting — snapping exists to make the mouse precise, not to restrict what you
+can type.
 
 While a command is waiting for a point, a small yellow crosshair follows your
-mouse so you can see exactly where a click will land.
+mouse so you can see exactly where a click will land. When it's currently
+locked onto an existing feature instead of the grid or raw cursor position, a
+cyan square appears around it.
 
 ## 6. Color
 
@@ -126,6 +142,7 @@ Type `quit` or `exit`, or just close the window.
 | F2 | `zoom fit` |
 | F7 | Toggle grid visibility |
 | F8 | Toggle grid snap |
+| F9 | Toggle object snap |
 
 ## Troubleshooting
 
