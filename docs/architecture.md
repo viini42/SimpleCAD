@@ -15,6 +15,13 @@ on earlier ones).
 - `scene/` — `Scene` owns the `std::vector<Primitive>` for the current drawing
   and exposes add/remove/clear and an aggregate bounding box (used by
   `zoom fit`).
+- `io/` — file formats in and out of the app. `xy_reader.hpp` parses the
+  `HED_XY` text format (a topology dump: numbered vertices, plus edges that
+  carry their own discretized point list) into plain data (`XyDocument`), with
+  no dependency on `Scene` — it's pure parsing, testable on its own.
+  `xy_importer.hpp` is the thin glue on top that turns an `XyDocument` into
+  primitives (`AddPoint` per vertex, `AddPolyline` per edge, skipping any edge
+  with fewer than 2 points).
 - `render/` — `Camera` converts between world coordinates (Y up, CAD units)
   and screen coordinates (Y down, pixels), and implements pan/zoom/fit.
   `Renderer` draws the grid, axes, every primitive, and the HUD, using plain
@@ -28,6 +35,8 @@ on earlier ones).
   without a dependency cycle; `CommandInterpreter` is the state machine that
   runs commands and drives multi-step, AutoCAD-style point collection
   (`SubmitPoint`), whether the point comes from typed text or a mouse click.
+  `CmdImport` is the one command that reaches into `io/` rather than adding to
+  the scene directly, and re-fits the camera on success.
 - `app/` — `AppState` is the small bag of shared, mutable settings (current
   color, grid size/visibility, grid-snap/object-snap on/off) read and written
   by both the interpreter and the renderer. `Application` owns the SDL

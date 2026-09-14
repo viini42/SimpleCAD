@@ -137,7 +137,23 @@ color
 existing shapes keep their original color. `color list` prints the built-in
 names; `color` with no arguments prints the current one.
 
-## 7. Reviewing and cleaning up
+## 7. Importing a file
+
+```
+import example.xy
+```
+
+`import <path>` (or `open <path>`) loads a `HED_XY` file — a plain-text format
+that stores topological vertices and edges (each edge carrying its own
+polyline geometry). Every vertex in the file becomes a `point`; every edge
+becomes a `polyline`. The view automatically zooms to fit whatever was
+imported, since these files are usually in a coordinate range far from the
+origin. The repo's `example.xy` is a real one to try this on.
+
+If the path doesn't exist or the file isn't valid `HED_XY` content, nothing
+is added and an error is logged instead.
+
+## 8. Reviewing and cleaning up
 
 - `list` — prints every shape currently in the scene, with its id and
   coordinates.
@@ -147,7 +163,7 @@ names; `color` with no arguments prints the current one.
 There's a command history too: press the **Up**/**Down** arrow keys to
 recall previously typed commands, edit, and re-run them.
 
-## 8. Quitting
+## 9. Quitting
 
 Type `quit` or `exit`, or just close the window.
 

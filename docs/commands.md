@@ -25,6 +25,24 @@ vertex. While it's collecting points, three extra keywords are accepted:
 `polyline` needs at least 2 points before `done`/`close` will finish it;
 otherwise it stays pending and logs an error.
 
+## Importing a HED_XY file
+
+`import <path>` (or `open <path>`) reads a file in the `HED_XY` text format —
+a list of topological vertices plus edges, each edge carrying its own
+discretized geometry (see `src/io/xy_reader.hpp` for the exact grammar). Every
+vertex becomes a `point`; every edge becomes a `polyline` using its own point
+list (so a straight 2-point edge renders identically to a `line`). New
+primitives use the current draw color, and the view is automatically framed
+to the imported geometry afterward, since HED_XY coordinates are typically far
+from the origin and a very different scale from the default view.
+
+The path is everything after the command word, so `import my file.xy` works
+for a path with (single) spaces; it cannot contain a comma or repeated
+whitespace, since those are the console's token separators. Import fails
+(with an error logged, nothing added) if the file is missing or isn't valid
+HED_XY content; an edge with fewer than 2 points is skipped rather than
+failing the whole import.
+
 | Command | Aliases | Arguments | Effect |
 |---|---|---|---|
 | `point x y` | `pt` | one point | Adds a point. |
@@ -42,6 +60,7 @@ otherwise it stays pending and logs an error.
 | `zoom in` / `zoom out` | | | Zooms by a fixed step, centered on the viewport. |
 | `zoom fit` | `zoom extents` | | Frames every primitive in the scene. |
 | `zoom <factor>` | | a number | Multiplies the current zoom scale by `factor`. |
+| `import <path>` | `open` | a file path | Loads a HED_XY file: each vertex becomes a point, each edge becomes a polyline. Auto-fits the view afterward. |
 | `list` | | | Lists every primitive with its id and coordinates. |
 | `undo` | | | Removes the most recently added primitive. |
 | `clear` | | | Removes every primitive. |
