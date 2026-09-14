@@ -57,6 +57,7 @@ namespace simple_cad
     void CmdSnap(const std::vector<std::string>& args);
     void CmdObjectSnap(const std::vector<std::string>& args);
     void CmdZoom(const std::vector<std::string>& args);
+    void CmdImport(const std::vector<std::string>& args);
     void CmdClear();
     void CmdUndo();
     void CmdList();

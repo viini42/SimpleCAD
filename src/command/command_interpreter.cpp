@@ -2,6 +2,7 @@
 
 #include "command/command_tokenizer.hpp"
 #include "core/text_utils.hpp"
+#include "io/xy_importer.hpp"
 
 #include <optional>
 #include <type_traits>
@@ -33,6 +34,20 @@ namespace
     "POLYLINE: specify next point (or 'done'/'close' to finish, 'undo' to remove last).";
   constexpr std::string_view POLYLINE_FIRST_PROMPT =
     "POLYLINE: specify first point (click or type x,y).";
+
+  // Reassembles a file path split into whitespace-separated tokens. Loses runs of repeated
+  // whitespace and any literal comma, since Tokenize() already discarded those.
+  std::string JoinWithSpaces(const std::vector<std::string>& tokens)
+  {
+    std::string result;
+    for (std::size_t i = 0; i < tokens.size(); ++i)
+    {
+      if (i > 0)
+        result += ' ';
+      result += tokens[i];
+    }
+    return result;
+  }
 } // namespace
 
 simple_cad::CommandInterpreter::CommandInterpreter(Scene& scene,
@@ -289,6 +304,8 @@ void simple_cad::CommandInterpreter::Dispatch(const std::vector<std::string>& to
     CmdObjectSnap(args);
   else if (command == "zoom")
     CmdZoom(args);
+  else if (command == "import" || command == "open")
+    CmdImport(args);
   else if (command == "clear")
     CmdClear();
   else if (command == "undo")
@@ -586,6 +603,31 @@ void simple_cad::CommandInterpreter::CmdZoom(const std::vector<std::string>& arg
   Log("Zoom scale: " + std::to_string(m_camera.Scale()) + " px/unit.");
 }
 
+void simple_cad::CommandInterpreter::CmdImport(const std::vector<std::string>& args)
+{
+  if (args.empty())
+  {
+    LogError("IMPORT: expected a file path.");
+    return;
+  }
+
+  const std::string path = JoinWithSpaces(args);
+  const auto result = ImportXyFile(m_scene, path, m_state.current_color);
+  if (!result)
+  {
+    LogError("IMPORT: could not read '" + path + "' (missing file or malformed HED_XY content).");
+    return;
+  }
+
+  Log("Imported " + std::to_string(result->points_imported) + " point(s) and " +
+      std::to_string(result->edges_imported) + " edge(s) from '" + path + "'.");
+  if (result->edges_skipped > 0)
+    Log("Skipped " + std::to_string(result->edges_skipped) + " edge(s) with fewer than 2 points.");
+
+  if (const auto bounds = m_scene.BoundingBox())
+    m_camera.Fit(*bounds);
+}
+
 void simple_cad::CommandInterpreter::CmdClear()
 {
   m_scene.Clear();
@@ -657,6 +699,7 @@ void simple_cad::CommandInterpreter::CmdHelp()
   Log("  snap on|off                              toggle grid snapping");
   Log("  osnap on|off                             toggle snapping to existing geometry");
   Log("  zoom in|out|fit|<factor>                 zoom the camera");
+  Log("  import <path>        | open              load a HED_XY file's points and polylines");
   Log("  list                                     list every primitive");
   Log("  undo                                     remove the last primitive");
   Log("  clear                                    remove every primitive");
