@@ -51,3 +51,6 @@ endif()
 
 add_executable(simple_cad src/main.cpp)
 target_link_libraries(simple_cad PRIVATE simple_cad_core)
+
+enable_testing()
+add_subdirectory(tests)

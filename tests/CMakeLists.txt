@@ -1,0 +1,3 @@
+add_executable(simple_cad_tests test_main.cpp)
+target_link_libraries(simple_cad_tests PRIVATE simple_cad_core)
+add_test(NAME simple_cad_tests COMMAND simple_cad_tests)
