@@ -1,3 +1,5 @@
+#include "app/app_state.hpp"
+#include "command/command_interpreter.hpp"
 #include "command/command_tokenizer.hpp"
 #include "core/color.hpp"
 #include "core/snap.hpp"
@@ -6,9 +8,11 @@
 #include "geometry/primitive.hpp"
 #include "render/camera.hpp"
 #include "scene/scene.hpp"
+#include "ui/command_console.hpp"
 
 #include <cmath>
 #include <cstdio>
+#include <variant>
 
 namespace
 {
@@ -144,6 +148,13 @@ namespace
     CHECK(NearlyEqual(rect_bounds.max.x, 10.0));
     CHECK(NearlyEqual(rect_bounds.min.y, -10.0));
     CHECK(NearlyEqual(rect_bounds.max.y, 5.0));
+
+    const simple_cad::Rect2D polyline_bounds = simple_cad::ComputeBounds(
+      simple_cad::PolylineShape{ { { 0.0, 0.0 }, { 10.0, 3.0 }, { 4.0, -7.0 } } });
+    CHECK(NearlyEqual(polyline_bounds.min.x, 0.0));
+    CHECK(NearlyEqual(polyline_bounds.max.x, 10.0));
+    CHECK(NearlyEqual(polyline_bounds.min.y, -7.0));
+    CHECK(NearlyEqual(polyline_bounds.max.y, 3.0));
   }
 
   void TestScene()
@@ -153,11 +164,16 @@ namespace
 
     scene.AddPoint({ 0.0, 0.0 }, {});
     scene.AddLine({ 0.0, 0.0 }, { 10.0, 0.0 }, {});
-    CHECK(scene.Primitives().size() == 2);
+    scene.AddPolyline({ { 0.0, 0.0 }, { 5.0, 20.0 } }, {});
+    CHECK(scene.Primitives().size() == 3);
 
     const auto bounds = scene.BoundingBox();
     CHECK(bounds.has_value());
     CHECK(NearlyEqual(bounds->max.x, 10.0));
+    CHECK(NearlyEqual(bounds->max.y, 20.0));
+
+    CHECK(scene.RemoveLast());
+    CHECK(scene.Primitives().size() == 2);
 
     CHECK(scene.RemoveLast());
     CHECK(scene.Primitives().size() == 1);
@@ -185,6 +201,8 @@ namespace
     primitives.push_back({ 2, {}, simple_cad::LineShape{ { 0.0, 0.0 }, { 10.0, 0.0 } } });
     primitives.push_back({ 3, {}, simple_cad::CircleShape{ { 0.0, 0.0 }, 5.0 } });
     primitives.push_back({ 4, {}, simple_cad::RectShape{ { 0.0, 0.0 }, { 4.0, 2.0 } } });
+    primitives.push_back(
+      { 5, {}, simple_cad::PolylineShape{ { { -1.0, -1.0 }, { -1.0, 9.0 }, { 9.0, 9.0 } } } });
 
     const auto candidates = simple_cad::CollectSnapCandidates(primitives);
 
@@ -194,7 +212,58 @@ namespace
     CHECK(HasCandidateNear(candidates, { 5.0, 0.0 }));  // line midpoint / circle quadrant
     CHECK(HasCandidateNear(candidates, { 4.0, 2.0 }));  // rect corner
     CHECK(HasCandidateNear(candidates, { 0.0, 5.0 }));  // circle quadrant
+    CHECK(HasCandidateNear(candidates, { -1.0, 9.0 })); // polyline vertex
+    CHECK(HasCandidateNear(candidates, { -1.0, 4.0 })); // polyline segment midpoint
     CHECK(!HasCandidateNear(candidates, { 99.0, 99.0 }));
+  }
+
+  void TestPolylineCommandFlow()
+  {
+    simple_cad::Scene scene;
+    simple_cad::Camera camera;
+    simple_cad::AppState state;
+    simple_cad::CommandConsole console([](const std::string&) {});
+    simple_cad::CommandInterpreter interpreter(scene, camera, state, console, [] {});
+
+    // Fully interactive: start empty, add three points, finish with 'done'.
+    interpreter.Execute("polyline");
+    CHECK(interpreter.HasPendingPoint());
+    interpreter.Execute("0 0");
+    interpreter.Execute("5 0");
+    interpreter.Execute("5 5");
+    CHECK(interpreter.HasPendingPoint());
+    interpreter.Execute("done");
+    CHECK(!interpreter.HasPendingPoint());
+    CHECK(scene.Primitives().size() == 1);
+    CHECK(std::holds_alternative<simple_cad::PolylineShape>(scene.Primitives().front().shape));
+    CHECK(std::get<simple_cad::PolylineShape>(scene.Primitives().front().shape).points.size() == 3);
+
+    // Partially inline, finished with 'close': the loop repeats the first point.
+    interpreter.Execute("polyline 0 0 1 0 1 1");
+    CHECK(interpreter.HasPendingPoint());
+    interpreter.Execute("close");
+    CHECK(!interpreter.HasPendingPoint());
+    CHECK(scene.Primitives().size() == 2);
+    CHECK(std::get<simple_cad::PolylineShape>(scene.Primitives().back().shape).points.size() == 4);
+
+    // 'undo' removes the last collected point; 'done' with fewer than 2 points stays pending.
+    interpreter.Execute("polyline 0 0");
+    interpreter.Execute("1 1");
+    interpreter.Execute("undo");
+    CHECK(interpreter.HasPendingPoint());
+    interpreter.Execute("done");
+    CHECK(interpreter.HasPendingPoint());
+    interpreter.Execute("2 2");
+    interpreter.Execute("done");
+    CHECK(!interpreter.HasPendingPoint());
+    CHECK(scene.Primitives().size() == 3);
+
+    // 'cancel' discards the in-progress polyline entirely.
+    const std::size_t count_before_cancel = scene.Primitives().size();
+    interpreter.Execute("polyline 0 0 1 1");
+    interpreter.Execute("cancel");
+    CHECK(!interpreter.HasPendingPoint());
+    CHECK(scene.Primitives().size() == count_before_cancel);
   }
 } // namespace
 
@@ -210,6 +279,7 @@ int main()
   TestComputeBounds();
   TestScene();
   TestObjectSnapCandidates();
+  TestPolylineCommandFlow();
 
   std::fprintf(stdout, "%d/%d checks passed\n", g_checks - g_failures, g_checks);
   return g_failures == 0 ? 0 : 1;
