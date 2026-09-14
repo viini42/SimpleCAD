@@ -1,15 +1,18 @@
-#include <SDL3/SDL.h>
+#include "app/application.hpp"
 
 #include <cstdio>
+#include <exception>
 
 int main()
 {
-  if (!SDL_Init(SDL_INIT_VIDEO))
+  try
   {
-    std::fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
+    simple_cad::Application app;
+    return app.Run();
+  }
+  catch (const std::exception& error)
+  {
+    std::fprintf(stderr, "Fatal error: %s\n", error.what());
     return 1;
   }
-
-  SDL_Quit();
-  return 0;
 }
