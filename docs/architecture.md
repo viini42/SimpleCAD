@@ -6,11 +6,12 @@ on earlier ones).
 - `core/` — dependency-free building blocks: `Vec2`, `Color` (+ parsing),
   `SnapToGrid`, and a `ToLower` text helper.
 - `geometry/` — the shape types (`PointShape`, `LineShape`, `CircleShape`,
-  `RectShape`), the `Primitive` (shape + color + id) and bounding-box math.
-  Shapes are stored by value in a `std::variant`; there is no shape base class
-  and no heap allocation involved in owning them. `object_snap.hpp` derives
-  the set of "interesting" points (endpoints, midpoints, centers, corners,
-  quadrants) from those shapes, for object-snap matching.
+  `RectShape`, `PolylineShape`), the `Primitive` (shape + color + id) and
+  bounding-box math. Shapes are stored by value in a `std::variant`; there is
+  no shape base class and no heap allocation involved in owning them beyond
+  `PolylineShape`'s own `std::vector<Vec2>`. `object_snap.hpp` derives the set
+  of "interesting" points (endpoints, midpoints, centers, corners, quadrants)
+  from those shapes, for object-snap matching.
 - `scene/` — `Scene` owns the `std::vector<Primitive>` for the current drawing
   and exposes add/remove/clear and an aggregate bounding box (used by
   `zoom fit`).
@@ -52,3 +53,9 @@ different event). `CommandInterpreter` tracks at most one in-progress command
 (`m_pending` + `m_collected_points`) and exposes a single `SubmitPoint` entry
 point that both paths funnel through, so "click the second point" and "type
 the second point" complete the same command identically.
+
+`POLYLINE` reuses the exact same machinery for an unbounded point count: its
+`SubmitPoint` branch never auto-completes on its own, and `HandlePendingInput`
+recognizes three extra keywords (`done`, `close`, `undo`) only while
+`m_pending == PendingCommand::Polyline`, so finishing is an explicit action
+rather than a fixed point count.

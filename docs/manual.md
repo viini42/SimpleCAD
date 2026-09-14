@@ -69,6 +69,26 @@ the cursor), so you can see exactly what will be added before you click.
 If you start a command and change your mind, press **Escape** (or type
 `cancel`) to abort it.
 
+### Polylines: a line with any number of points
+
+`polyline` (or `pline`/`pl`) is like `line`, except it keeps asking for more
+points instead of stopping at two. Try:
+
+```
+polyline
+```
+
+Click (or type) as many points as you like — each one adds another segment,
+and the preview shows every segment placed so far plus a rubber-band segment
+to your cursor. When you're done, type one of:
+
+- `done` — finish the polyline as-is.
+- `close` — finish it and add a closing segment back to the first point.
+- `undo` — remove the last point you added, if you placed one by mistake,
+  without finishing the polyline.
+
+You need at least 2 points before `done`/`close` will actually finish it.
+
 ## 4. Move around: pan, zoom, fit
 
 - **Scroll the mouse wheel** to zoom in/out, centered on wherever the cursor is.

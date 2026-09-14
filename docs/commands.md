@@ -12,12 +12,26 @@ A command that needs points can be given:
 While a command is waiting for a point, type `cancel` (or press **Escape**) to
 abort it.
 
+## Polyline
+
+`polyline` (and its aliases) works like `line`, but keeps waiting for more
+points indefinitely — any inline or typed/clicked points just add another
+vertex. While it's collecting points, three extra keywords are accepted:
+
+- `done` (or `finish`) — finish the polyline with the points collected so far.
+- `close` — finish it, adding one more segment back to the very first point.
+- `undo` — remove the last point added, without finishing.
+
+`polyline` needs at least 2 points before `done`/`close` will finish it;
+otherwise it stays pending and logs an error.
+
 | Command | Aliases | Arguments | Effect |
 |---|---|---|---|
 | `point x y` | `pt` | one point | Adds a point. |
 | `line [x1 y1 x2 y2]` | `ln` | zero, one or two points | Adds a line segment. |
 | `circle [cx cy [r]]` | `cir` | center, then a radius (number) or a point on the circumference | Adds a circle. |
 | `rect [x1 y1 x2 y2]` | `rectangle` | two opposite corners | Adds an axis-aligned rectangle. |
+| `polyline [x1 y1 x2 y2 ...]` | `pline`, `pl` | two or more points | Adds a multi-point line. See below — it doesn't auto-finish. |
 | `color <name>` | `colour` | a named color or `#RRGGBB` / `0xRRGGBB` | Sets the color used for new primitives. |
 | `color list` | | | Lists the built-in named colors. |
 | `color` | | | Prints the current color. |
