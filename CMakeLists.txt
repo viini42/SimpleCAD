@@ -25,12 +25,23 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SDL3)
 
-add_executable(simple_cad src/main.cpp)
-target_link_libraries(simple_cad PRIVATE SDL3::SDL3)
-target_compile_features(simple_cad PRIVATE cxx_std_23)
+add_library(simple_cad_core STATIC
+  src/core/color.cpp
+  src/core/snap.cpp
+  src/core/text_utils.cpp
+  src/geometry/primitive.cpp
+  src/scene/scene.cpp
+)
+
+target_include_directories(simple_cad_core PUBLIC src)
+target_link_libraries(simple_cad_core PUBLIC SDL3::SDL3)
+target_compile_features(simple_cad_core PUBLIC cxx_std_23)
 
 if(MSVC)
-  target_compile_options(simple_cad PRIVATE /W4)
+  target_compile_options(simple_cad_core PRIVATE /W4)
 else()
-  target_compile_options(simple_cad PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(simple_cad_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+add_executable(simple_cad src/main.cpp)
+target_link_libraries(simple_cad PRIVATE simple_cad_core)
