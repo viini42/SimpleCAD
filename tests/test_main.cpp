@@ -2,6 +2,7 @@
 #include "core/color.hpp"
 #include "core/snap.hpp"
 #include "core/vec2.hpp"
+#include "geometry/object_snap.hpp"
 #include "geometry/primitive.hpp"
 #include "render/camera.hpp"
 #include "scene/scene.hpp"
@@ -165,6 +166,36 @@ namespace
     CHECK(scene.Primitives().empty());
     CHECK(!scene.RemoveLast());
   }
+
+  bool HasCandidateNear(const std::vector<simple_cad::SnapCandidate>& candidates,
+                        simple_cad::Vec2 point)
+  {
+    for (const simple_cad::SnapCandidate& candidate : candidates)
+    {
+      if (NearlyEqual(candidate.position.x, point.x) && NearlyEqual(candidate.position.y, point.y))
+        return true;
+    }
+    return false;
+  }
+
+  void TestObjectSnapCandidates()
+  {
+    std::vector<simple_cad::Primitive> primitives;
+    primitives.push_back({ 1, {}, simple_cad::PointShape{ { 1.0, 1.0 } } });
+    primitives.push_back({ 2, {}, simple_cad::LineShape{ { 0.0, 0.0 }, { 10.0, 0.0 } } });
+    primitives.push_back({ 3, {}, simple_cad::CircleShape{ { 0.0, 0.0 }, 5.0 } });
+    primitives.push_back({ 4, {}, simple_cad::RectShape{ { 0.0, 0.0 }, { 4.0, 2.0 } } });
+
+    const auto candidates = simple_cad::CollectSnapCandidates(primitives);
+
+    CHECK(HasCandidateNear(candidates, { 1.0, 1.0 }));  // point node
+    CHECK(HasCandidateNear(candidates, { 0.0, 0.0 }));  // line start / rect corner / circle center
+    CHECK(HasCandidateNear(candidates, { 10.0, 0.0 })); // line end
+    CHECK(HasCandidateNear(candidates, { 5.0, 0.0 }));  // line midpoint / circle quadrant
+    CHECK(HasCandidateNear(candidates, { 4.0, 2.0 }));  // rect corner
+    CHECK(HasCandidateNear(candidates, { 0.0, 5.0 }));  // circle quadrant
+    CHECK(!HasCandidateNear(candidates, { 99.0, 99.0 }));
+  }
 } // namespace
 
 int main()
@@ -178,6 +209,7 @@ int main()
   TestCameraFit();
   TestComputeBounds();
   TestScene();
+  TestObjectSnapCandidates();
 
   std::fprintf(stdout, "%d/%d checks passed\n", g_checks - g_failures, g_checks);
   return g_failures == 0 ? 0 : 1;
