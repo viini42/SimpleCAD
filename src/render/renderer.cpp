@@ -148,8 +148,10 @@ void simple_cad::Renderer::DrawPrimitives(const Scene& scene, const Camera& came
           DrawLine(shape, primitive.color, camera);
         else if constexpr (std::is_same_v<ShapeType, CircleShape>)
           DrawCircle(shape, primitive.color, camera);
-        else
+        else if constexpr (std::is_same_v<ShapeType, RectShape>)
           DrawRect(shape, primitive.color, camera);
+        else
+          DrawPolyline(shape, primitive.color, camera);
       },
       primitive.shape);
   }
@@ -213,6 +215,25 @@ void simple_cad::Renderer::DrawRect(const RectShape& shape, Color color, const C
   SDL_RenderRect(m_renderer, &rect);
 }
 
+void simple_cad::Renderer::DrawPolyline(const PolylineShape& shape,
+                                        Color color,
+                                        const Camera& camera)
+{
+  if (shape.points.size() < 2)
+    return;
+
+  std::vector<SDL_FPoint> screen_points;
+  screen_points.reserve(shape.points.size());
+  for (const Vec2& point : shape.points)
+  {
+    const Vec2 screen = camera.WorldToScreen(point);
+    screen_points.push_back({ static_cast<float>(screen.x), static_cast<float>(screen.y) });
+  }
+
+  SetDrawColor(color);
+  SDL_RenderLines(m_renderer, screen_points.data(), static_cast<int>(screen_points.size()));
+}
+
 void simple_cad::Renderer::DrawCursorMarker(Vec2 world_pos, const Camera& camera)
 {
   const Vec2 screen = camera.WorldToScreen(world_pos);
@@ -269,6 +290,14 @@ void simple_cad::Renderer::DrawPendingPreview(PendingCommand pending,
     const double radius = (preview_point - collected_points[0]).Length();
     if (radius > 0.0)
       DrawCircle(CircleShape{ collected_points[0], radius }, PREVIEW_COLOR, camera);
+    break;
+  }
+
+  case PendingCommand::Polyline:
+  {
+    std::vector<Vec2> preview_points = collected_points;
+    preview_points.push_back(preview_point);
+    DrawPolyline(PolylineShape{ std::move(preview_points) }, PREVIEW_COLOR, camera);
     break;
   }
 

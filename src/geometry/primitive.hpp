@@ -34,7 +34,12 @@ namespace simple_cad
     Vec2 corner_b;
   };
 
-  using ShapeVariant = std::variant<PointShape, LineShape, CircleShape, RectShape>;
+  struct PolylineShape
+  {
+    std::vector<Vec2> points;
+  };
+
+  using ShapeVariant = std::variant<PointShape, LineShape, CircleShape, RectShape, PolylineShape>;
 
   struct Primitive
   {

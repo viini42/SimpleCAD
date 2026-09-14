@@ -51,6 +51,7 @@ namespace simple_cad
     void CmdLine(const std::vector<std::string>& args);
     void CmdCircle(const std::vector<std::string>& args);
     void CmdRect(const std::vector<std::string>& args);
+    void CmdPolyline(const std::vector<std::string>& args);
     void CmdColor(const std::vector<std::string>& args);
     void CmdGrid(const std::vector<std::string>& args);
     void CmdSnap(const std::vector<std::string>& args);
@@ -65,6 +66,8 @@ namespace simple_cad
     void CompleteRect();
     void CompleteCircleWithPoint(Vec2 point);
     void CompleteCircleWithRadius(double radius);
+    void CompletePolyline(bool close);
+    void UndoLastPolylinePoint();
 
     void ResetPending();
     void SetPromptAndLog(std::string text);

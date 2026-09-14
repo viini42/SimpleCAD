@@ -12,5 +12,6 @@ namespace simple_cad
     Line,
     Circle,
     Rect,
+    Polyline,
   };
 } // namespace simple_cad

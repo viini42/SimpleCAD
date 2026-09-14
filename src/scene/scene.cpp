@@ -28,6 +28,11 @@ std::uint64_t simple_cad::Scene::AddRect(Vec2 corner_a, Vec2 corner_b, Color col
   return Add(RectShape{ corner_a, corner_b }, color);
 }
 
+std::uint64_t simple_cad::Scene::AddPolyline(std::vector<Vec2> points, Color color)
+{
+  return Add(PolylineShape{ std::move(points) }, color);
+}
+
 bool simple_cad::Scene::RemoveLast()
 {
   if (m_primitives.empty())

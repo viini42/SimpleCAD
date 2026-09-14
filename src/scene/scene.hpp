@@ -15,6 +15,7 @@ namespace simple_cad
     std::uint64_t AddLine(Vec2 start, Vec2 end, Color color);
     std::uint64_t AddCircle(Vec2 center, double radius, Color color);
     std::uint64_t AddRect(Vec2 corner_a, Vec2 corner_b, Color color);
+    std::uint64_t AddPolyline(std::vector<Vec2> points, Color color);
 
     // Removes the most recently added primitive, if any. Returns false when the scene was empty.
     bool RemoveLast();

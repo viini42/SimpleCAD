@@ -25,11 +25,18 @@ simple_cad::Rect2D simple_cad::ComputeBounds(const ShapeVariant& shape)
         const Vec2 radius_offset{ concrete_shape.radius, concrete_shape.radius };
         return { concrete_shape.center - radius_offset, concrete_shape.center + radius_offset };
       }
-      else
+      else if constexpr (std::is_same_v<ShapeType, RectShape>)
       {
-        static_assert(std::is_same_v<ShapeType, RectShape>);
         Rect2D bounds{ concrete_shape.corner_a, concrete_shape.corner_a };
         bounds.Expand(concrete_shape.corner_b);
+        return bounds;
+      }
+      else
+      {
+        static_assert(std::is_same_v<ShapeType, PolylineShape>);
+        Rect2D bounds{ concrete_shape.points.front(), concrete_shape.points.front() };
+        for (const Vec2& point : concrete_shape.points)
+          bounds.Expand(point);
         return bounds;
       }
     },

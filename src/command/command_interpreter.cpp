@@ -28,6 +28,11 @@ namespace
     }
     return points;
   }
+
+  constexpr std::string_view POLYLINE_NEXT_PROMPT =
+    "POLYLINE: specify next point (or 'done'/'close' to finish, 'undo' to remove last).";
+  constexpr std::string_view POLYLINE_FIRST_PROMPT =
+    "POLYLINE: specify first point (click or type x,y).";
 } // namespace
 
 simple_cad::CommandInterpreter::CommandInterpreter(Scene& scene,
@@ -88,6 +93,25 @@ void simple_cad::CommandInterpreter::HandlePendingInput(const std::vector<std::s
   {
     Cancel();
     return;
+  }
+
+  if (m_pending == PendingCommand::Polyline && tokens.size() == 1)
+  {
+    if (first == "done" || first == "finish")
+    {
+      CompletePolyline(false);
+      return;
+    }
+    if (first == "close")
+    {
+      CompletePolyline(true);
+      return;
+    }
+    if (first == "undo")
+    {
+      UndoLastPolylinePoint();
+      return;
+    }
   }
 
   const bool radius_allowed = m_pending == PendingCommand::Circle && m_collected_points.size() == 1;
@@ -152,6 +176,11 @@ void simple_cad::CommandInterpreter::SubmitPoint(Vec2 world_point)
     else
       CompleteRect();
     break;
+
+  case PendingCommand::Polyline:
+    m_collected_points.push_back(world_point);
+    SetPromptAndLog(std::string(POLYLINE_NEXT_PROMPT));
+    break;
   }
 }
 
@@ -205,6 +234,36 @@ void simple_cad::CommandInterpreter::CompleteCircleWithRadius(double radius)
   ResetPending();
 }
 
+void simple_cad::CommandInterpreter::CompletePolyline(bool close)
+{
+  if (m_collected_points.size() < 2)
+  {
+    LogError("POLYLINE: need at least 2 points before finishing.");
+    return;
+  }
+
+  std::vector<Vec2> points = m_collected_points;
+  if (close)
+    points.push_back(points.front());
+
+  m_scene.AddPolyline(std::move(points), m_state.current_color);
+  Log(close ? "Polyline added (closed)." : "Polyline added.");
+  ResetPending();
+}
+
+void simple_cad::CommandInterpreter::UndoLastPolylinePoint()
+{
+  if (m_collected_points.empty())
+  {
+    LogError("POLYLINE: no points to undo yet.");
+    return;
+  }
+
+  m_collected_points.pop_back();
+  SetPromptAndLog(
+    std::string(m_collected_points.empty() ? POLYLINE_FIRST_PROMPT : POLYLINE_NEXT_PROMPT));
+}
+
 void simple_cad::CommandInterpreter::Dispatch(const std::vector<std::string>& tokens)
 {
   const std::string command = ToLower(tokens[0]);
@@ -218,6 +277,8 @@ void simple_cad::CommandInterpreter::Dispatch(const std::vector<std::string>& to
     CmdCircle(args);
   else if (command == "rect" || command == "rectangle")
     CmdRect(args);
+  else if (command == "polyline" || command == "pline" || command == "pl")
+    CmdPolyline(args);
   else if (command == "color" || command == "colour")
     CmdColor(args);
   else if (command == "grid")
@@ -351,6 +412,22 @@ void simple_cad::CommandInterpreter::CmdRect(const std::vector<std::string>& arg
 
   SetPromptAndLog(m_collected_points.empty() ? "RECT: specify first corner (click or type x,y)."
                                              : "RECT: specify opposite corner.");
+}
+
+void simple_cad::CommandInterpreter::CmdPolyline(const std::vector<std::string>& args)
+{
+  const std::vector<Vec2> points = ParseLeadingPoints(args, args.size());
+  if (points.size() * 2 != args.size())
+  {
+    LogError("POLYLINE: expected pairs of 'x y' coordinates.");
+    return;
+  }
+
+  m_pending = PendingCommand::Polyline;
+  m_collected_points = points;
+
+  SetPromptAndLog(
+    std::string(m_collected_points.empty() ? POLYLINE_FIRST_PROMPT : POLYLINE_NEXT_PROMPT));
 }
 
 void simple_cad::CommandInterpreter::CmdColor(const std::vector<std::string>& args)
@@ -550,11 +627,15 @@ void simple_cad::CommandInterpreter::CmdList()
         else if constexpr (std::is_same_v<ShapeType, CircleShape>)
           description += "circle center (" + std::to_string(shape.center.x) + ", " +
                          std::to_string(shape.center.y) + ") r=" + std::to_string(shape.radius);
-        else
+        else if constexpr (std::is_same_v<ShapeType, RectShape>)
           description += "rect (" + std::to_string(shape.corner_a.x) + ", " +
                          std::to_string(shape.corner_a.y) + ") -> (" +
                          std::to_string(shape.corner_b.x) + ", " +
                          std::to_string(shape.corner_b.y) + ")";
+        else
+          description += "polyline with " + std::to_string(shape.points.size()) +
+                         " points, starting at (" + std::to_string(shape.points.front().x) + ", " +
+                         std::to_string(shape.points.front().y) + ")";
 
         Log(description);
       },
@@ -569,6 +650,8 @@ void simple_cad::CommandInterpreter::CmdHelp()
   Log("  line [x1 y1 x2 y2]   | ln                add a line (click or type points)");
   Log("  circle [cx cy [r]]   | cir               add a circle");
   Log("  rect [x1 y1 x2 y2]                       add a rectangle");
+  Log("  polyline [x1 y1 x2 y2 ...]  | pline, pl   add a multi-point line");
+  Log("    while drawing: 'done' finish, 'close' finish+close, 'undo' remove last point");
   Log("  color <name|#hex>    | color list        set the draw color");
   Log("  grid on|off|size <n>                     grid visibility / spacing");
   Log("  snap on|off                              toggle grid snapping");
