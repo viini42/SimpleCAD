@@ -11,5 +11,6 @@ namespace simple_cad
     double grid_size{ 10.0 };
     bool grid_visible{ true };
     bool snap_enabled{ true };
+    bool object_snap_enabled{ true };
   };
 } // namespace simple_cad

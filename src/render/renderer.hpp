@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/app_state.hpp"
+#include "command/pending_command.hpp"
 #include "core/vec2.hpp"
 #include "geometry/primitive.hpp"
 #include "render/camera.hpp"
@@ -9,6 +10,7 @@
 
 #include <SDL3/SDL.h>
 #include <string>
+#include <vector>
 
 namespace simple_cad
 {
@@ -23,6 +25,10 @@ namespace simple_cad
     const std::string& prompt;
     Vec2 mouse_world;
     bool show_cursor_marker;
+    PendingCommand pending;
+    const std::vector<Vec2>& collected_points;
+    Vec2 preview_point;
+    bool snapped_to_object;
   };
 
   // Draws the grid, every primitive in the scene, and the command console HUD using
@@ -43,6 +49,11 @@ namespace simple_cad
     void DrawCircle(const CircleShape& shape, Color color, const Camera& camera);
     void DrawRect(const RectShape& shape, Color color, const Camera& camera);
     void DrawCursorMarker(Vec2 world_pos, const Camera& camera);
+    void DrawObjectSnapIndicator(Vec2 world_pos, const Camera& camera);
+    void DrawPendingPreview(PendingCommand pending,
+                            const std::vector<Vec2>& collected_points,
+                            Vec2 preview_point,
+                            const Camera& camera);
     void DrawHud(const FrameContext& context);
 
     void SetDrawColor(Color color);

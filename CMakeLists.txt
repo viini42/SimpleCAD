@@ -30,6 +30,7 @@ add_library(simple_cad_core STATIC
   src/core/snap.cpp
   src/core/text_utils.cpp
   src/geometry/primitive.cpp
+  src/geometry/object_snap.cpp
   src/scene/scene.cpp
   src/render/camera.cpp
   src/ui/command_console.cpp

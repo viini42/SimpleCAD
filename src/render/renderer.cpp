@@ -14,6 +14,8 @@ namespace
   constexpr simple_cad::Color AXIS_X_COLOR{ 150, 70, 70, 255 };
   constexpr simple_cad::Color AXIS_Y_COLOR{ 70, 130, 90, 255 };
   constexpr simple_cad::Color CURSOR_COLOR{ 230, 200, 60, 255 };
+  constexpr simple_cad::Color OBJECT_SNAP_COLOR{ 70, 220, 220, 255 };
+  constexpr simple_cad::Color PREVIEW_COLOR{ 230, 200, 60, 170 };
   constexpr simple_cad::Color PANEL_COLOR{ 12, 13, 16, 235 };
   constexpr simple_cad::Color STATUS_TEXT_COLOR{ 170, 175, 185, 255 };
   constexpr simple_cad::Color LOG_TEXT_COLOR{ 200, 205, 215, 255 };
@@ -56,7 +58,15 @@ void simple_cad::Renderer::DrawFrame(const FrameContext& context)
   DrawPrimitives(context.scene, context.camera);
 
   if (context.show_cursor_marker)
-    DrawCursorMarker(context.mouse_world, context.camera);
+  {
+    DrawPendingPreview(context.pending,
+                       context.collected_points,
+                       context.preview_point,
+                       context.camera);
+    DrawCursorMarker(context.preview_point, context.camera);
+    if (context.snapped_to_object)
+      DrawObjectSnapIndicator(context.preview_point, context.camera);
+  }
 
   DrawHud(context);
 
@@ -221,6 +231,55 @@ void simple_cad::Renderer::DrawCursorMarker(Vec2 world_pos, const Camera& camera
                  static_cast<float>(screen.y) + ARM);
 }
 
+void simple_cad::Renderer::DrawObjectSnapIndicator(Vec2 world_pos, const Camera& camera)
+{
+  const Vec2 screen = camera.WorldToScreen(world_pos);
+  constexpr float HALF = 6.0f;
+  const SDL_FRect box{ static_cast<float>(screen.x) - HALF,
+                       static_cast<float>(screen.y) - HALF,
+                       HALF * 2.0f,
+                       HALF * 2.0f };
+
+  SetDrawColor(OBJECT_SNAP_COLOR);
+  SDL_RenderRect(m_renderer, &box);
+}
+
+void simple_cad::Renderer::DrawPendingPreview(PendingCommand pending,
+                                              const std::vector<Vec2>& collected_points,
+                                              Vec2 preview_point,
+                                              const Camera& camera)
+{
+  if (collected_points.empty())
+    return;
+
+  SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_BLEND);
+
+  switch (pending)
+  {
+  case PendingCommand::Line:
+    DrawLine(LineShape{ collected_points[0], preview_point }, PREVIEW_COLOR, camera);
+    break;
+
+  case PendingCommand::Rect:
+    DrawRect(RectShape{ collected_points[0], preview_point }, PREVIEW_COLOR, camera);
+    break;
+
+  case PendingCommand::Circle:
+  {
+    const double radius = (preview_point - collected_points[0]).Length();
+    if (radius > 0.0)
+      DrawCircle(CircleShape{ collected_points[0], radius }, PREVIEW_COLOR, camera);
+    break;
+  }
+
+  case PendingCommand::None:
+  case PendingCommand::Point:
+    break;
+  }
+
+  SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_NONE);
+}
+
 void simple_cad::Renderer::DrawHud(const FrameContext& context)
 {
   const auto& log_lines = context.console.LogLines();
@@ -247,6 +306,7 @@ void simple_cad::Renderer::DrawHud(const FrameContext& context)
     "  grid=" + std::to_string(context.state.grid_size).substr(0, 6) +
     (context.state.grid_visible ? " [on]" : " [off]") +
     "  snap=" + (context.state.snap_enabled ? std::string("[on]") : std::string("[off]")) +
+    "  osnap=" + (context.state.object_snap_enabled ? std::string("[on]") : std::string("[off]")) +
     "  color=" + std::string(ColorName(context.state.current_color));
   DrawText(PADDING, cursor_y, status, STATUS_TEXT_COLOR);
   cursor_y += LINE_HEIGHT;

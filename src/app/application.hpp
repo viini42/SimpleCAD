@@ -37,7 +37,17 @@ namespace simple_cad
     void RefreshViewportSize();
 
     void RenderFrame();
-    [[nodiscard]] Vec2 SnappedWorldPointAt(Vec2 screen_pos) const;
+
+    struct SnapResolution
+    {
+      Vec2 point;
+      bool snapped_to_object{ false };
+    };
+
+    // Resolves the point a click (or the preview crosshair) at `screen_pos` would use:
+    // the nearest existing-geometry feature within a pixel radius when object snap is
+    // on, else the grid-snapped point when grid snap is on, else the raw world point.
+    [[nodiscard]] SnapResolution ResolveSnap(Vec2 screen_pos) const;
 
     struct SdlWindowDeleter
     {

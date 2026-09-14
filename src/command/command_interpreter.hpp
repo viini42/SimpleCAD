@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/app_state.hpp"
+#include "command/pending_command.hpp"
 #include "core/vec2.hpp"
 #include "render/camera.hpp"
 #include "scene/scene.hpp"
@@ -12,15 +13,6 @@
 
 namespace simple_cad
 {
-  enum class PendingCommand
-  {
-    None,
-    Point,
-    Line,
-    Circle,
-    Rect,
-  };
-
   // Parses command-line text (typed into the CommandConsole) and drives multi-step,
   // AutoCAD-style commands that need one or more points supplied either by typing
   // "x y" / "x,y" or by clicking on the canvas (see SubmitPoint).
@@ -45,6 +37,10 @@ namespace simple_cad
 
     [[nodiscard]] bool HasPendingPoint() const { return m_pending != PendingCommand::None; }
 
+    [[nodiscard]] PendingCommand Pending() const { return m_pending; }
+
+    [[nodiscard]] const std::vector<Vec2>& CollectedPoints() const { return m_collected_points; }
+
     [[nodiscard]] const std::string& Prompt() const { return m_prompt; }
 
   private:
@@ -58,6 +54,7 @@ namespace simple_cad
     void CmdColor(const std::vector<std::string>& args);
     void CmdGrid(const std::vector<std::string>& args);
     void CmdSnap(const std::vector<std::string>& args);
+    void CmdObjectSnap(const std::vector<std::string>& args);
     void CmdZoom(const std::vector<std::string>& args);
     void CmdClear();
     void CmdUndo();

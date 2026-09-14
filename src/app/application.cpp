@@ -1,7 +1,9 @@
 #include "app/application.hpp"
 
 #include "core/snap.hpp"
+#include "geometry/object_snap.hpp"
 
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -10,6 +12,7 @@ namespace
   constexpr int DEFAULT_WINDOW_WIDTH = 1280;
   constexpr int DEFAULT_WINDOW_HEIGHT = 800;
   constexpr double WHEEL_ZOOM_STEP = 1.1;
+  constexpr double OBJECT_SNAP_PIXEL_RADIUS = 10.0;
 
   SDL_Window* CreateAppWindow()
   {
@@ -142,6 +145,9 @@ void simple_cad::Application::HandleKeyDown(const SDL_KeyboardEvent& event)
   case SDLK_F8:
     m_interpreter.Execute(m_state.snap_enabled ? "snap off" : "snap on");
     break;
+  case SDLK_F9:
+    m_interpreter.Execute(m_state.object_snap_enabled ? "osnap off" : "osnap on");
+    break;
   default:
     break;
   }
@@ -153,7 +159,7 @@ void simple_cad::Application::HandleMouseButtonDown(const SDL_MouseButtonEvent& 
 
   if (event.button == SDL_BUTTON_LEFT && m_interpreter.HasPendingPoint())
   {
-    m_interpreter.SubmitPoint(SnappedWorldPointAt(screen));
+    m_interpreter.SubmitPoint(ResolveSnap(screen).point);
     return;
   }
 
@@ -202,18 +208,52 @@ void simple_cad::Application::RefreshViewportSize()
 
 void simple_cad::Application::RenderFrame()
 {
+  const bool pending = m_interpreter.HasPendingPoint();
+  const SnapResolution snap =
+    pending ? ResolveSnap(m_mouse_screen) : SnapResolution{ m_mouse_world, false };
+
   const FrameContext context{ m_scene,
                               m_camera,
                               m_state,
                               m_console,
                               m_interpreter.Prompt(),
                               m_mouse_world,
-                              m_interpreter.HasPendingPoint() };
+                              pending,
+                              m_interpreter.Pending(),
+                              m_interpreter.CollectedPoints(),
+                              snap.point,
+                              snap.snapped_to_object };
   m_hud_renderer->DrawFrame(context);
 }
 
-simple_cad::Vec2 simple_cad::Application::SnappedWorldPointAt(Vec2 screen_pos) const
+simple_cad::Application::SnapResolution simple_cad::Application::ResolveSnap(Vec2 screen_pos) const
 {
+  if (m_state.object_snap_enabled)
+  {
+    const std::vector<SnapCandidate> candidates = CollectSnapCandidates(m_scene.Primitives());
+
+    double best_distance_sq = OBJECT_SNAP_PIXEL_RADIUS * OBJECT_SNAP_PIXEL_RADIUS;
+    std::optional<Vec2> best;
+
+    for (const SnapCandidate& candidate : candidates)
+    {
+      const Vec2 candidate_screen = m_camera.WorldToScreen(candidate.position);
+      const Vec2 delta = candidate_screen - screen_pos;
+      const double distance_sq = delta.x * delta.x + delta.y * delta.y;
+      if (distance_sq <= best_distance_sq)
+      {
+        best_distance_sq = distance_sq;
+        best = candidate.position;
+      }
+    }
+
+    if (best)
+      return { *best, true };
+  }
+
   const Vec2 world = m_camera.ScreenToWorld(screen_pos);
-  return m_state.snap_enabled ? SnapToGrid(world, m_state.grid_size) : world;
+  if (m_state.snap_enabled)
+    return { SnapToGrid(world, m_state.grid_size), false };
+
+  return { world, false };
 }

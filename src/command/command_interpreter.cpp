@@ -224,6 +224,8 @@ void simple_cad::CommandInterpreter::Dispatch(const std::vector<std::string>& to
     CmdGrid(args);
   else if (command == "snap")
     CmdSnap(args);
+  else if (command == "osnap")
+    CmdObjectSnap(args);
   else if (command == "zoom")
     CmdZoom(args);
   else if (command == "clear")
@@ -441,6 +443,32 @@ void simple_cad::CommandInterpreter::CmdSnap(const std::vector<std::string>& arg
   LogError("SNAP: unknown option '" + args[0] + "'.");
 }
 
+void simple_cad::CommandInterpreter::CmdObjectSnap(const std::vector<std::string>& args)
+{
+  if (args.empty())
+  {
+    LogError("OSNAP: expected 'on' or 'off'.");
+    return;
+  }
+
+  const std::string option = ToLower(args[0]);
+  if (option == "on")
+  {
+    m_state.object_snap_enabled = true;
+    Log("Object snap on.");
+    return;
+  }
+
+  if (option == "off")
+  {
+    m_state.object_snap_enabled = false;
+    Log("Object snap off.");
+    return;
+  }
+
+  LogError("OSNAP: unknown option '" + args[0] + "'.");
+}
+
 void simple_cad::CommandInterpreter::CmdZoom(const std::vector<std::string>& args)
 {
   if (args.empty())
@@ -544,11 +572,12 @@ void simple_cad::CommandInterpreter::CmdHelp()
   Log("  color <name|#hex>    | color list        set the draw color");
   Log("  grid on|off|size <n>                     grid visibility / spacing");
   Log("  snap on|off                              toggle grid snapping");
+  Log("  osnap on|off                             toggle snapping to existing geometry");
   Log("  zoom in|out|fit|<factor>                 zoom the camera");
   Log("  list                                     list every primitive");
   Log("  undo                                     remove the last primitive");
   Log("  clear                                    remove every primitive");
   Log("  cancel                                   abort the current command");
   Log("  quit | exit                              close the application");
-  Log("Shortcuts: F2 zoom fit, F7 toggle grid, F8 toggle snap, Escape cancel.");
+  Log("Shortcuts: F2 zoom fit, F7 toggle grid, F8 toggle snap, F9 toggle osnap, Escape cancel.");
 }
