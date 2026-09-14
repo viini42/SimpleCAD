@@ -16,6 +16,18 @@ installed (X11 and/or Wayland). See
 [SDL3's Linux build dependencies](https://wiki.libsdl.org/SDL3/README-linux#build-dependencies)
 if configuration fails while probing for one of them.
 
+Running under a Wayland compositor that doesn't decorate windows itself
+(e.g. GNOME/Mutter) also needs `libdecor` installed *before* configuring,
+otherwise the window opens without a title bar/border:
+
+```sh
+sudo dnf install libdecor-devel   # Fedora
+sudo apt install libdecor-0-dev   # Debian/Ubuntu
+```
+
+If you installed it after already configuring, delete `build/` and
+reconfigure so SDL3's dependency detection picks it up.
+
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build -j
@@ -45,6 +57,8 @@ Commands can be given fully inline (`line 0 0 10 10`), partially inline
 (`line 0 0` then click the second point), or fully interactively (`line` then
 click twice, or type `x,y` for each point). See [docs/commands.md](docs/commands.md)
 for the full command reference, or type `help` in the app itself.
+
+See [docs/manual.md](docs/manual.md) for a step-by-step walkthrough.
 
 ## Project layout
 
