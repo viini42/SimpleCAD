@@ -31,6 +31,10 @@ add_library(simple_cad_core STATIC
   src/core/text_utils.cpp
   src/geometry/primitive.cpp
   src/scene/scene.cpp
+  src/render/camera.cpp
+  src/ui/command_console.cpp
+  src/command/command_tokenizer.cpp
+  src/command/command_interpreter.cpp
 )
 
 target_include_directories(simple_cad_core PUBLIC src)
