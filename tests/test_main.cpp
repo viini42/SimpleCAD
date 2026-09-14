@@ -6,6 +6,8 @@
 #include "core/vec2.hpp"
 #include "geometry/object_snap.hpp"
 #include "geometry/primitive.hpp"
+#include "io/xy_importer.hpp"
+#include "io/xy_reader.hpp"
 #include "render/camera.hpp"
 #include "scene/scene.hpp"
 #include "ui/command_console.hpp"
@@ -265,6 +267,45 @@ namespace
     CHECK(!interpreter.HasPendingPoint());
     CHECK(scene.Primitives().size() == count_before_cancel);
   }
+
+  void TestXyReader()
+  {
+    CHECK(!simple_cad::ReadXyFile("/no/such/file.xy").has_value());
+
+    const auto document = simple_cad::ReadXyFile(SIMPLECAD_EXAMPLE_XY_PATH);
+    CHECK(document.has_value());
+    if (!document)
+      return;
+
+    CHECK(document->vertices.size() == 81);
+    CHECK(document->edges.size() == 80);
+
+    CHECK(document->vertices.front().id == 82);
+    CHECK(NearlyEqual(document->vertices.front().position.x, 3798.7044281026469, 1e-6));
+    CHECK(NearlyEqual(document->vertices.front().position.y, -6174.0704655689869, 1e-6));
+
+    CHECK(document->edges.front().id == 80);
+    CHECK(document->edges.front().start_id == 80);
+    CHECK(document->edges.front().end_id == 82);
+    CHECK(document->edges.front().points.size() == 2);
+  }
+
+  void TestXyImport()
+  {
+    simple_cad::Scene scene;
+    const auto result =
+      simple_cad::ImportXyFile(scene, SIMPLECAD_EXAMPLE_XY_PATH, simple_cad::Color{});
+    CHECK(result.has_value());
+    if (!result)
+      return;
+
+    CHECK(result->points_imported == 81);
+    CHECK(result->edges_imported == 80);
+    CHECK(result->edges_skipped == 0);
+    CHECK(scene.Primitives().size() == 161);
+
+    CHECK(!simple_cad::ImportXyFile(scene, "/no/such/file.xy", simple_cad::Color{}).has_value());
+  }
 } // namespace
 
 int main()
@@ -280,6 +321,8 @@ int main()
   TestScene();
   TestObjectSnapCandidates();
   TestPolylineCommandFlow();
+  TestXyReader();
+  TestXyImport();
 
   std::fprintf(stdout, "%d/%d checks passed\n", g_checks - g_failures, g_checks);
   return g_failures == 0 ? 0 : 1;
