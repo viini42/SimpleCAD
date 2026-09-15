@@ -457,7 +457,10 @@ void simple_cad::CommandInterpreter::CmdColor(const std::vector<std::string>& ar
 
   if (ToLower(args[0]) == "list")
   {
-    Log("Available colors: white black red green blue yellow cyan magenta orange purple gray");
+    std::string names = "Available colors:";
+    for (const NamedColor& entry : PALETTE)
+      names += " " + std::string(entry.name);
+    Log(names);
     return;
   }
 
