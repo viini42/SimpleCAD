@@ -1,9 +1,11 @@
 # SimpleCad
 
-A small 2D CAD sandbox written in C++23 and SDL3. Draw points, lines, circles and
-rectangles by typing coordinates into an always-on command console (AutoCAD-style)
-or by clicking on the canvas. Supports panning, zooming, fit-to-window, grid
-display, grid snapping and per-primitive colors.
+A small 2D CAD sandbox written in C++23 and SDL3. Draw points, lines, circles,
+rectangles and polylines by typing coordinates into an always-on command
+console (AutoCAD-style), by clicking on the canvas, or via the ribbon toolbar
+across the top of the window. Supports panning, zooming, fit-to-window, grid
+display, grid and object snapping, importing HED_XY files, and per-primitive
+colors.
 
 ## Building
 
@@ -45,13 +47,20 @@ ctest --test-dir build
 The bottom panel is always listening for keyboard input — there is no separate
 "click to focus the console" step. Type a command and press **Enter**.
 
+The strip across the top is the ribbon: four buttons start the point/line/
+circle/polyline commands (equivalent to typing them), and the 3x4 grid of
+color swatches sets the draw color with one click — the swatch matching the
+current color is outlined.
+
 - Mouse wheel: zoom in/out, centered on the cursor.
 - Middle-mouse drag: pan.
-- Left click: supplies a point to whichever command is currently waiting for one.
+- Left click: ribbon buttons/swatches if it lands there; otherwise supplies a
+  point to whichever command is currently waiting for one.
 - **Escape**: cancel the in-progress command, or clear the input line.
 - **F2**: zoom to fit (`zoom fit`).
 - **F7**: toggle grid visibility.
 - **F8**: toggle grid snapping.
+- **F9**: toggle object snapping.
 
 Commands can be given fully inline (`line 0 0 10 10`), partially inline
 (`line 0 0` then click the second point), or fully interactively (`line` then

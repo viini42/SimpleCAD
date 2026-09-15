@@ -3,6 +3,12 @@
 Typed into the console at the bottom of the window, then submitted with **Enter**.
 Tokens are separated by spaces and/or commas, so `10,20` and `10 20` are equivalent.
 
+The ribbon across the top of the window is a shortcut for a few of these —
+`point`/`line`/`circle`/`polyline` as buttons, and `color <name>` as a grid of
+swatches — see [docs/manual.md](manual.md#2-the-ribbon). Every ribbon click
+runs the exact command it's a shortcut for, so everything below applies to it
+too.
+
 A command that needs points can be given:
 - fully inline: `line 0 0 10 10`
 - partially inline, finishing interactively: `line 0 0` then click, or type, the
@@ -84,5 +90,5 @@ unaffected by that.
 When both are on, object snap takes priority: if the cursor is within a small
 pixel radius of an existing point/endpoint/midpoint/center/corner/quadrant, a
 click lands exactly on that feature instead of the grid. A cyan square marker
-shows when this is about to happen. See [docs/manual.md](manual.md#5-snapping-grid-and-objects)
+shows when this is about to happen. See [docs/manual.md](manual.md#6-snapping-grid-and-objects)
 for a walkthrough.

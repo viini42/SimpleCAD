@@ -9,11 +9,28 @@ A step-by-step walkthrough for using the app. For the bare command syntax, see
 ./build/simple_cad
 ```
 
-A window opens with a dark drawing canvas and a panel at the bottom — the
-**console**. The console is always listening for keyboard input; there's no
-separate step to "click into" it before you can type.
+A window opens with a dark drawing canvas, a strip across the top — the
+**ribbon** — and a panel at the bottom — the **console**. The console is
+always listening for keyboard input; there's no separate step to "click into"
+it before you can type.
 
-## 2. Read the console panel
+## 2. The ribbon
+
+The ribbon has two parts:
+
+- Four buttons — **Point**, **Line**, **Circle**, **Polyline** — each one
+  starts that command, exactly as if you'd typed it into the console. If a
+  different command is already in progress, clicking a button doesn't cancel
+  it (same as typing a command name mid-command would log an error).
+- A 3x4 grid of color swatches. Clicking one is the same as typing
+  `color <name>` for that swatch. Whichever swatch matches the current draw
+  color is outlined to show it's selected.
+
+Every ribbon click reaches the canvas the same way typing would, so anything
+you can do with the ribbon, you can also do — and always could do — from the
+console; it's just a shortcut for the most common actions.
+
+## 3. Read the console panel
 
 From top to bottom, the panel shows:
 
@@ -27,7 +44,7 @@ From top to bottom, the panel shows:
 4. **Input line** — starts with `>`, followed by whatever you've typed and a
    blinking cursor.
 
-## 3. Draw your first shapes
+## 4. Draw your first shapes
 
 Type a command and press **Enter**. Try each of these, one at a time:
 
@@ -89,7 +106,7 @@ to your cursor. When you're done, type one of:
 
 You need at least 2 points before `done`/`close` will actually finish it.
 
-## 4. Move around: pan, zoom, fit
+## 5. Move around: pan, zoom, fit
 
 - **Scroll the mouse wheel** to zoom in/out, centered on wherever the cursor is.
 - **Hold the middle mouse button and drag** to pan.
@@ -98,7 +115,7 @@ You need at least 2 points before `done`/`close` will actually finish it.
 - Type `zoom in`, `zoom out`, or `zoom 2` (multiply the current scale by a
   factor of your choice).
 
-## 5. Snapping: grid and objects
+## 6. Snapping: grid and objects
 
 The faint grid lines are spaced `grid size` world units apart (10 by default).
 They automatically get sparser as you zoom out, so the screen doesn't fill
@@ -124,7 +141,7 @@ mouse so you can see exactly where a click will land. When it's currently
 locked onto an existing feature instead of the grid or raw cursor position, a
 cyan square appears around it.
 
-## 6. Color
+## 7. Color
 
 ```
 color red
@@ -137,7 +154,7 @@ color
 existing shapes keep their original color. `color list` prints the built-in
 names; `color` with no arguments prints the current one.
 
-## 7. Importing a file
+## 8. Importing a file
 
 ```
 import example.xy
@@ -153,7 +170,7 @@ origin. The repo's `example.xy` is a real one to try this on.
 If the path doesn't exist or the file isn't valid `HED_XY` content, nothing
 is added and an error is logged instead.
 
-## 8. Reviewing and cleaning up
+## 9. Reviewing and cleaning up
 
 - `list` — prints every shape currently in the scene, with its id and
   coordinates.
@@ -163,7 +180,7 @@ is added and an error is logged instead.
 There's a command history too: press the **Up**/**Down** arrow keys to
 recall previously typed commands, edit, and re-run them.
 
-## 9. Quitting
+## 10. Quitting
 
 Type `quit` or `exit`, or just close the window.
 

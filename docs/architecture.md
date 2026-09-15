@@ -29,6 +29,11 @@ on earlier ones).
   no image/font assets are needed.
 - `ui/` — `CommandConsole` is a UI-agnostic text input + scrollback log; it
   knows nothing about SDL or the interpreter, only a callback fired on submit.
+  `Ribbon` is a fixed layout of button/swatch rectangles (computed once in its
+  constructor — nothing about it depends on window size) plus hit-testing;
+  like `CommandConsole`, it draws nothing itself and calls nothing itself —
+  `Renderer` draws from `Buttons()`/`Swatches()`, `Application` turns a click
+  into a call to `CommandInterpreter::Execute` (see below).
 - `command/` — `Tokenize`/`ParseNumber`/`ParsePoint` turn console text into
   arguments; `pending_command.hpp` defines the `PendingCommand` enum on its
   own (no other includes), so both `command/` and `render/` can reference it
@@ -68,3 +73,15 @@ the second point" complete the same command identically.
 recognizes three extra keywords (`done`, `close`, `undo`) only while
 `m_pending == PendingCommand::Polyline`, so finishing is an explicit action
 rather than a fixed point count.
+
+## Why the ribbon has no logic of its own
+
+`Ribbon::Button` stores its action as the literal command string (`"point"`,
+`"line"`, ...) rather than, say, an enum `Application` would switch on. A
+button click in `Application::HandleMouseButtonDown` is just
+`m_interpreter.Execute(*command)` — the exact same entry point typed text
+goes through. A swatch click is `Execute("color " + ColorName(color))`. This
+means the ribbon can't drift out of sync with what the console can do (there
+is no second implementation of "start a line" to keep in sync), at the cost
+of a string round-trip that a dedicated `PendingCommand`/`Color` enum switch
+would avoid — a fine trade for four buttons and twelve swatches.
