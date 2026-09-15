@@ -36,6 +36,7 @@ add_library(simple_cad_core STATIC
   src/io/xy_importer.cpp
   src/render/camera.cpp
   src/ui/command_console.cpp
+  src/ui/ribbon.cpp
   src/command/command_tokenizer.cpp
   src/command/command_interpreter.cpp
   src/render/renderer.cpp
