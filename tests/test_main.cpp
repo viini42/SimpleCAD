@@ -11,6 +11,7 @@
 #include "render/camera.hpp"
 #include "scene/scene.hpp"
 #include "ui/command_console.hpp"
+#include "ui/ribbon.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -306,6 +307,35 @@ namespace
 
     CHECK(!simple_cad::ImportXyFile(scene, "/no/such/file.xy", simple_cad::Color{}).has_value());
   }
+
+  void TestRibbonHitTesting()
+  {
+    const simple_cad::Ribbon ribbon;
+    CHECK(ribbon.Buttons().size() == 4);
+    CHECK(ribbon.Swatches().size() == simple_cad::PALETTE.size());
+
+    for (const simple_cad::Ribbon::Button& button : ribbon.Buttons())
+    {
+      const simple_cad::Vec2 center{ button.bounds.x + button.bounds.w / 2.0,
+                                     button.bounds.y + button.bounds.h / 2.0 };
+      const auto command = ribbon.HitTestButton(center);
+      CHECK(command.has_value());
+      CHECK(command.has_value() && *command == button.command);
+    }
+
+    for (const simple_cad::Ribbon::Swatch& swatch : ribbon.Swatches())
+    {
+      const simple_cad::Vec2 center{ swatch.bounds.x + swatch.bounds.w / 2.0,
+                                     swatch.bounds.y + swatch.bounds.h / 2.0 };
+      const auto color = ribbon.HitTestSwatch(center);
+      CHECK(color.has_value());
+      CHECK(color.has_value() && *color == swatch.named_color.color);
+    }
+
+    CHECK(!ribbon.HitTestButton({ -100.0, -100.0 }).has_value());
+    CHECK(!ribbon.HitTestSwatch({ -100.0, -100.0 }).has_value());
+    CHECK(!ribbon.HitTestButton({ 10.0, ribbon.Height() + 500.0 }).has_value());
+  }
 } // namespace
 
 int main()
@@ -323,6 +353,7 @@ int main()
   TestPolylineCommandFlow();
   TestXyReader();
   TestXyImport();
+  TestRibbonHitTesting();
 
   std::fprintf(stdout, "%d/%d checks passed\n", g_checks - g_failures, g_checks);
   return g_failures == 0 ? 0 : 1;
