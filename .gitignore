@@ -8,3 +8,4 @@ compile_commands.json
 *.exe
 .vscode/
 .idea/
+experimental/
