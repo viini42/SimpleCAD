@@ -7,6 +7,7 @@
 #include "render/renderer.hpp"
 #include "scene/scene.hpp"
 #include "ui/command_console.hpp"
+#include "ui/ribbon.hpp"
 
 #include <SDL3/SDL.h>
 #include <memory>
@@ -68,6 +69,7 @@ namespace simple_cad
     AppState m_state;
     CommandConsole m_console;
     CommandInterpreter m_interpreter;
+    Ribbon m_ribbon;
 
     Vec2 m_mouse_screen;
     Vec2 m_mouse_world;

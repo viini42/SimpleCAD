@@ -21,6 +21,11 @@ namespace
   constexpr simple_cad::Color LOG_TEXT_COLOR{ 200, 205, 215, 255 };
   constexpr simple_cad::Color PROMPT_TEXT_COLOR{ 230, 200, 60, 255 };
   constexpr simple_cad::Color INPUT_TEXT_COLOR{ 240, 240, 240, 255 };
+  constexpr simple_cad::Color BUTTON_COLOR{ 40, 42, 48, 255 };
+  constexpr simple_cad::Color BUTTON_BORDER_COLOR{ 95, 100, 110, 255 };
+  constexpr simple_cad::Color BUTTON_TEXT_COLOR{ 220, 222, 228, 255 };
+  constexpr simple_cad::Color SWATCH_BORDER_COLOR{ 70, 73, 80, 255 };
+  constexpr simple_cad::Color SWATCH_SELECTED_BORDER_COLOR{ 230, 200, 60, 255 };
 
   constexpr float LINE_HEIGHT = 14.0f;
   constexpr float PADDING = 6.0f;
@@ -68,6 +73,7 @@ void simple_cad::Renderer::DrawFrame(const FrameContext& context)
       DrawObjectSnapIndicator(context.preview_point, context.camera);
   }
 
+  DrawRibbon(context.ribbon, context.state, context.camera);
   DrawHud(context);
 
   SDL_RenderPresent(m_renderer);
@@ -307,6 +313,49 @@ void simple_cad::Renderer::DrawPendingPreview(PendingCommand pending,
   }
 
   SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_NONE);
+}
+
+void simple_cad::Renderer::DrawRibbon(const Ribbon& ribbon,
+                                      const AppState& state,
+                                      const Camera& camera)
+{
+  const Vec2 viewport = camera.ViewportSize();
+  const SDL_FRect panel{ 0.0f, 0.0f, static_cast<float>(viewport.x), ribbon.Height() };
+
+  SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_BLEND);
+  SetDrawColor(PANEL_COLOR);
+  SDL_RenderFillRect(m_renderer, &panel);
+  SDL_SetRenderDrawBlendMode(m_renderer, SDL_BLENDMODE_NONE);
+
+  for (const Ribbon::Button& button : ribbon.Buttons())
+  {
+    SetDrawColor(BUTTON_COLOR);
+    SDL_RenderFillRect(m_renderer, &button.bounds);
+    SetDrawColor(BUTTON_BORDER_COLOR);
+    SDL_RenderRect(m_renderer, &button.bounds);
+    DrawText(button.bounds.x + 4.0f,
+             button.bounds.y + (button.bounds.h - 8.0f) / 2.0f,
+             button.label,
+             BUTTON_TEXT_COLOR);
+  }
+
+  for (const Ribbon::Swatch& swatch : ribbon.Swatches())
+  {
+    SetDrawColor(swatch.named_color.color);
+    SDL_RenderFillRect(m_renderer, &swatch.bounds);
+
+    const bool selected = swatch.named_color.color == state.current_color;
+    SetDrawColor(selected ? SWATCH_SELECTED_BORDER_COLOR : SWATCH_BORDER_COLOR);
+    SDL_RenderRect(m_renderer, &swatch.bounds);
+    if (selected)
+    {
+      const SDL_FRect outline{ swatch.bounds.x - 1.0f,
+                               swatch.bounds.y - 1.0f,
+                               swatch.bounds.w + 2.0f,
+                               swatch.bounds.h + 2.0f };
+      SDL_RenderRect(m_renderer, &outline);
+    }
+  }
 }
 
 void simple_cad::Renderer::DrawHud(const FrameContext& context)

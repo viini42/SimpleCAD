@@ -7,6 +7,7 @@
 #include "render/camera.hpp"
 #include "scene/scene.hpp"
 #include "ui/command_console.hpp"
+#include "ui/ribbon.hpp"
 
 #include <SDL3/SDL.h>
 #include <string>
@@ -22,6 +23,7 @@ namespace simple_cad
     const Camera& camera;
     const AppState& state;
     const CommandConsole& console;
+    const Ribbon& ribbon;
     const std::string& prompt;
     Vec2 mouse_world;
     bool show_cursor_marker;
@@ -55,6 +57,7 @@ namespace simple_cad
                             const std::vector<Vec2>& collected_points,
                             Vec2 preview_point,
                             const Camera& camera);
+    void DrawRibbon(const Ribbon& ribbon, const AppState& state, const Camera& camera);
     void DrawHud(const FrameContext& context);
 
     void SetDrawColor(Color color);

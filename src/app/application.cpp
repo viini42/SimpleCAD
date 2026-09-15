@@ -157,10 +157,25 @@ void simple_cad::Application::HandleMouseButtonDown(const SDL_MouseButtonEvent& 
 {
   const Vec2 screen{ static_cast<double>(event.x), static_cast<double>(event.y) };
 
-  if (event.button == SDL_BUTTON_LEFT && m_interpreter.HasPendingPoint())
+  if (event.button == SDL_BUTTON_LEFT)
   {
-    m_interpreter.SubmitPoint(ResolveSnap(screen).point);
-    return;
+    if (const auto command = m_ribbon.HitTestButton(screen))
+    {
+      m_interpreter.Execute(*command);
+      return;
+    }
+
+    if (const auto color = m_ribbon.HitTestSwatch(screen))
+    {
+      m_interpreter.Execute("color " + std::string(ColorName(*color)));
+      return;
+    }
+
+    if (m_interpreter.HasPendingPoint())
+    {
+      m_interpreter.SubmitPoint(ResolveSnap(screen).point);
+      return;
+    }
   }
 
   if (event.button == SDL_BUTTON_MIDDLE)
@@ -216,6 +231,7 @@ void simple_cad::Application::RenderFrame()
                               m_camera,
                               m_state,
                               m_console,
+                              m_ribbon,
                               m_interpreter.Prompt(),
                               m_mouse_world,
                               pending,
