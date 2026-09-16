@@ -2,6 +2,8 @@
 
 #include "command/command_tokenizer.hpp"
 #include "core/text_utils.hpp"
+#include "io/model_reader.hpp"
+#include "io/model_writer.hpp"
 #include "io/xy_importer.hpp"
 
 #include <optional>
@@ -304,8 +306,12 @@ void simple_cad::CommandInterpreter::Dispatch(const std::vector<std::string>& to
     CmdObjectSnap(args);
   else if (command == "zoom")
     CmdZoom(args);
-  else if (command == "import" || command == "open")
+  else if (command == "import")
     CmdImport(args);
+  else if (command == "save")
+    CmdSave(args);
+  else if (command == "open" || command == "load")
+    CmdOpen(args);
   else if (command == "clear")
     CmdClear();
   else if (command == "undo")
@@ -631,6 +637,47 @@ void simple_cad::CommandInterpreter::CmdImport(const std::vector<std::string>& a
     m_camera.Fit(*bounds);
 }
 
+void simple_cad::CommandInterpreter::CmdSave(const std::vector<std::string>& args)
+{
+  if (args.empty())
+  {
+    LogError("SAVE: expected a file path.");
+    return;
+  }
+
+  const std::string path = JoinWithSpaces(args);
+  if (!WriteModelFile(m_scene, path))
+  {
+    LogError("SAVE: could not write '" + path + "'.");
+    return;
+  }
+
+  Log("Saved " + std::to_string(m_scene.Primitives().size()) + " primitive(s) to '" + path + "'.");
+}
+
+void simple_cad::CommandInterpreter::CmdOpen(const std::vector<std::string>& args)
+{
+  if (args.empty())
+  {
+    LogError("OPEN: expected a file path.");
+    return;
+  }
+
+  const std::string path = JoinWithSpaces(args);
+  auto loaded = ReadModelFile(path);
+  if (!loaded)
+  {
+    LogError("OPEN: could not read '" + path + "' (missing file or invalid model content).");
+    return;
+  }
+
+  m_scene = std::move(*loaded);
+  Log("Opened '" + path + "' (" + std::to_string(m_scene.Primitives().size()) + " primitive(s)).");
+
+  if (const auto bounds = m_scene.BoundingBox())
+    m_camera.Fit(*bounds);
+}
+
 void simple_cad::CommandInterpreter::CmdClear()
 {
   m_scene.Clear();
@@ -702,7 +749,9 @@ void simple_cad::CommandInterpreter::CmdHelp()
   Log("  snap on|off                              toggle grid snapping");
   Log("  osnap on|off                             toggle snapping to existing geometry");
   Log("  zoom in|out|fit|<factor>                 zoom the camera");
-  Log("  import <path>        | open              load a HED_XY file's points and polylines");
+  Log("  import <path>                            run a HED_XY \"script\": adds points/polylines");
+  Log("  save <path>                               save the scene to a model file (JSON)");
+  Log("  open <path>          | load               replace the scene with a saved model file");
   Log("  list                                     list every primitive");
   Log("  undo                                     remove the last primitive");
   Log("  clear                                    remove every primitive");
