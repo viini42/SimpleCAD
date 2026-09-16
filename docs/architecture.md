@@ -134,7 +134,7 @@ text goes through. A swatch click is `Execute("color " + ColorName(color))`.
 This means the ribbon can't drift out of sync with what the console can do
 (there is no second implementation of "start a line" to keep in sync), at
 the cost of a string round-trip that a dedicated `PendingCommand`/`Color`
-enum switch would avoid — a fine trade for six buttons and twelve swatches.
+enum switch would avoid — a fine trade for seven buttons and twelve swatches.
 
 `Button::prefill` is the one place this pattern bends: `save`/`open` need a
 file path, which nothing about a button click can supply. Rather than the
@@ -143,6 +143,18 @@ ribbon somehow collecting text input itself, a `prefill` button's `command`
 buffer* instead of executed — `m_console.ClearInput(); m_console.AppendText(
 button->command);` — so the user finishes typing the one thing only they
 know (the path) exactly where they'd type it anyway.
+
+`Button::requires_selection` is the other bend, for the Edit section's
+**Delete** button: whether it's currently meaningful depends on `AppState`,
+which `Ribbon` (built once in its constructor, with no reference to anything
+else) has no access to. So `Ribbon` just tags the button, and the two
+consumers that *do* have an `AppState` decide what the tag means right where
+they already handle everything else button-related — `Renderer::DrawRibbon`
+picks dimmed vs. normal colors per-button from
+`!button.requires_selection || state.selected_primitive_id.has_value()`, and
+`Application::HandleMouseButtonDown` checks the same condition before acting
+on a hit (a disabled button still consumes the click; it just does nothing
+with it, like any other disabled control).
 
 ## Why the ribbon is organized into `Section`s
 

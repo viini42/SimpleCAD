@@ -6,8 +6,10 @@ Tokens are separated by spaces and/or commas, so `10,20` and `10 20` are equival
 The ribbon across the top of the window is a shortcut for a few of these,
 grouped into a **File** section (**Save**/**Open**, which pre-fill the
 console with `save `/`open ` rather than running immediately, since both need
-a path) and a **Creation** section (`point`/`line`/`circle`/`polyline` as
-buttons that do run immediately, and `color <name>` as a grid of swatches) —
+a path), a **Creation** section (`point`/`line`/`circle`/`polyline` as
+buttons that do run immediately, and `color <name>` as a grid of swatches),
+and an **Edit** section (a single **Delete** button, equivalent to `delete`
+with no arguments — dimmed and inert unless a shape is currently selected) —
 see [docs/manual.md](manual.md#2-the-ribbon). Every ribbon click reaches the
 console the same way typing would, so everything below applies to it too.
 
@@ -42,8 +44,10 @@ input line and nothing else to cancel, deselects. Only one primitive can be
 selected at a time.
 
 `delete` (or `erase`/`del`), with no arguments, removes the selected
-primitive; the **Delete** key does the same thing without needing to type
-anything. `delete <id>` removes a specific primitive by the id shown in
+primitive; the **Delete** key or the ribbon's **Delete** button (Edit
+section — dimmed and unclickable until something is selected) do the same
+thing without needing to type anything. `delete <id>` removes a specific
+primitive by the id shown in
 `list`'s output or the status line, whether or not it's currently selected.
 Deleting the selected primitive clears the selection; deleting a different
 id leaves the current selection alone.

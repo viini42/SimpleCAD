@@ -16,8 +16,8 @@ it before you can type.
 
 ## 2. The ribbon
 
-The ribbon is split into two labeled sections (a thin vertical line separates
-them, with the section name printed underneath):
+The ribbon is split into three labeled sections (a thin vertical line
+separates each, with the section name printed underneath):
 
 - **File** — **Save** and **Open** buttons. Since both need a file path,
   clicking one doesn't run anything by itself — it clears the console's
@@ -30,6 +30,12 @@ them, with the section name printed underneath):
   3x4 grid of color swatches. Clicking a swatch is the same as typing
   `color <name>` for it. Whichever swatch matches the current draw color is
   outlined to show it's selected.
+- **Edit** — a single **Delete** button, same as pressing the Delete key or
+  typing `delete`. It's only enabled (drawn at full brightness, clickable)
+  when a shape is currently selected; otherwise it's dimmed and clicking it
+  does nothing, same as any other disabled button. See
+  [9. Selecting, reviewing and cleaning up](#9-selecting-reviewing-and-cleaning-up)
+  for how selection works.
 
 Every ribbon click reaches the canvas the same way typing would, so anything
 you can do with the ribbon, you can also do — and always could do — from the
@@ -196,9 +202,10 @@ isn't valid for that command, nothing changes and an error is logged.
 - **Click a shape's outline** (when nothing is waiting for a point) to select
   it — a pink box appears around it, and the status line shows `sel=#<id>`.
   Click empty canvas to deselect.
-- **Delete** key, or `delete` (with nothing selected, `delete <id>` also
-  works, using the id from `list` or the status line) — removes the
-  selected/given shape.
+- **Delete** key, the ribbon's **Delete** button (Edit section — dimmed and
+  inert until something is selected), or `delete` (with nothing selected,
+  `delete <id>` also works, using the id from `list` or the status line) —
+  removes the selected/given shape.
 - `undo` — removes the most recently added shape (regardless of selection).
 - `clear` — removes everything.
 
