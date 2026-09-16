@@ -40,8 +40,8 @@ console; it's just a shortcut for the most common actions.
 From top to bottom, the panel shows:
 
 1. **Status line** — current mouse coordinates, zoom scale, grid size and
-   on/off state, grid-snap and object-snap on/off state, and the current draw
-   color.
+   on/off state, grid-snap and object-snap on/off state, the current draw
+   color, and the selected primitive's id (or `none`).
 2. **Log** — the last few lines of output: results of commands, errors, and
    command prompts.
 3. **Prompt line** — either `Ready. Type 'help' for commands.`, or what the
@@ -189,11 +189,17 @@ it as pasting geometry from an external source, not opening a saved drawing.
 If a path given to any of these three commands doesn't exist, or its content
 isn't valid for that command, nothing changes and an error is logged.
 
-## 9. Reviewing and cleaning up
+## 9. Selecting, reviewing and cleaning up
 
 - `list` — prints every shape currently in the scene, with its id and
   coordinates.
-- `undo` — removes the most recently added shape.
+- **Click a shape's outline** (when nothing is waiting for a point) to select
+  it — a pink box appears around it, and the status line shows `sel=#<id>`.
+  Click empty canvas to deselect.
+- **Delete** key, or `delete` (with nothing selected, `delete <id>` also
+  works, using the id from `list` or the status line) — removes the
+  selected/given shape.
+- `undo` — removes the most recently added shape (regardless of selection).
 - `clear` — removes everything.
 
 There's a command history too: press the **Up**/**Down** arrow keys to
@@ -210,7 +216,8 @@ Type `quit` or `exit`, or just close the window.
 | Enter | Run the typed command |
 | Backspace | Delete the last typed character |
 | Up / Down | Recall previous / next command from history |
-| Escape | Cancel the in-progress command, or clear the input line |
+| Escape | Cancel the in-progress command; else clear the input line; else deselect |
+| Delete | Remove the selected shape (same as `delete`) |
 | F2 | `zoom fit` |
 | F7 | Toggle grid visibility |
 | F8 | Toggle grid snap |

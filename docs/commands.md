@@ -33,6 +33,21 @@ vertex. While it's collecting points, three extra keywords are accepted:
 `polyline` needs at least 2 points before `done`/`close` will finish it;
 otherwise it stays pending and logs an error.
 
+## Selecting and deleting a primitive
+
+Click any shape's outline (when no command is waiting for a point) to select
+it — a pink dashed-looking box appears around it, and the status line shows
+`sel=#<id>`. Clicking empty canvas, or pressing **Escape** with an empty
+input line and nothing else to cancel, deselects. Only one primitive can be
+selected at a time.
+
+`delete` (or `erase`/`del`), with no arguments, removes the selected
+primitive; the **Delete** key does the same thing without needing to type
+anything. `delete <id>` removes a specific primitive by the id shown in
+`list`'s output or the status line, whether or not it's currently selected.
+Deleting the selected primitive clears the selection; deleting a different
+id leaves the current selection alone.
+
 ## Saving and opening a model
 
 `save <path>` writes every primitive currently in the scene — full fidelity,
@@ -96,6 +111,7 @@ fewer than 2 points is skipped rather than failing the whole import.
 | `import <path>` | | a file path | Runs a HED_XY "script": adds points/polylines from it to the scene. Auto-fits the view afterward. |
 | `list` | | | Lists every primitive with its id and coordinates. |
 | `undo` | | | Removes the most recently added primitive. |
+| `delete [id]` | `erase`, `del` | an optional primitive id | Removes the selected (or given) primitive. |
 | `clear` | | | Removes every primitive. |
 | `help` | `?` | | Prints this reference inside the console log. |
 | `quit` | `exit` | | Closes the application. |

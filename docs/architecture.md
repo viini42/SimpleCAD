@@ -11,10 +11,15 @@ on earlier ones).
   no shape base class and no heap allocation involved in owning them beyond
   `PolylineShape`'s own `std::vector<Vec2>`. `object_snap.hpp` derives the set
   of "interesting" points (endpoints, midpoints, centers, corners, quadrants)
-  from those shapes, for object-snap matching.
+  from those shapes, for object-snap matching. `hit_test.hpp`'s
+  `DistanceToShape` is the companion query for *whole-shape* picking (click-
+  to-select): distance from a point to a shape's outline — point-to-segment
+  for lines/polyline segments, to the circumference for circles, to the
+  nearest of 4 edges for rects — never to a filled interior, since nothing in
+  this app is filled.
 - `scene/` — `Scene` owns the `std::vector<Primitive>` for the current drawing
-  and exposes add/remove/clear and an aggregate bounding box (used by
-  `zoom fit`).
+  and exposes add/remove (by id or "last added")/clear and an aggregate
+  bounding box (used by `zoom fit`).
 - `io/` — file formats in and out of the app, all JSON/text parsing done via
   [nlohmann/json](https://github.com/nlohmann/json) (fetched via
   `FetchContent`, like SDL3) — never exposed in a header, only inside the
@@ -66,12 +71,14 @@ on earlier ones).
   through it: `m_scene = std::move(*loaded);`. All three re-fit the camera on
   success.
 - `app/` — `AppState` is the small bag of shared, mutable settings (current
-  color, grid size/visibility, grid-snap/object-snap on/off) read and written
-  by both the interpreter and the renderer. `Application` owns the SDL
-  window/renderer, runs the event loop, wires mouse/keyboard input to the
-  console and interpreter, and resolves what a click (or the preview
-  crosshair) should snap to via `ResolveSnap` — object snap first, then grid
-  snap, then the raw cursor position.
+  color, grid size/visibility, grid-snap/object-snap on/off, and the
+  currently selected primitive's id) read and written by both the
+  interpreter and the renderer. `Application` owns the SDL window/renderer,
+  runs the event loop, wires mouse/keyboard input to the console and
+  interpreter, resolves what a click (or the preview crosshair) should snap
+  to via `ResolveSnap` — object snap first, then grid snap, then the raw
+  cursor position — and, via `FindPrimitiveNear`, what an idle click (no
+  command pending) selects.
 
 ## Why a `std::variant` for shapes
 
@@ -96,6 +103,26 @@ the second point" complete the same command identically.
 recognizes three extra keywords (`done`, `close`, `undo`) only while
 `m_pending == PendingCommand::Polyline`, so finishing is an explicit action
 rather than a fixed point count.
+
+## Why selection tolerance is a world-space radius, not a screen-space one
+
+`ResolveSnap`'s object-snap search projects each candidate *point* to screen
+space and compares to a fixed pixel radius, because there's a fixed, small
+list of candidates worth projecting. `FindPrimitiveNear` instead converts the
+tolerance the other way — `world_tolerance = SELECT_PIXEL_RADIUS /
+camera.Scale()` — and does the whole distance comparison in world space via
+`DistanceToShape`. Re-deriving a full screen-space polyline/rect outline per
+primitive per click just to compare a screen distance would be far more work
+than transforming one click point into world space once and dividing a
+constant by the current zoom; both approaches converge on the same "N pixels
+on screen, regardless of zoom" feel.
+
+Selection's highlight, drawn by `DrawSelectionHighlight`, sidesteps needing
+any shape-specific rendering at all: it reuses `ComputeBounds` (already
+written for `zoom fit`) to get the selected primitive's world-space bounding
+box, converts that one rect to screen space, and draws it outlined with a
+small pixel margin. A point's highlight is a small square, a line's a
+diagonal rectangle around it, and so on — one code path for all five shapes.
 
 ## Why the ribbon has no logic of its own
 
