@@ -40,6 +40,7 @@ add_library(simple_cad_core STATIC
   src/core/text_utils.cpp
   src/geometry/primitive.cpp
   src/geometry/object_snap.cpp
+  src/geometry/hit_test.cpp
   src/scene/scene.cpp
   src/io/xy_reader.cpp
   src/io/xy_importer.cpp

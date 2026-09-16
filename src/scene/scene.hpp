@@ -20,6 +20,9 @@ namespace simple_cad
     // Removes the most recently added primitive, if any. Returns false when the scene was empty.
     bool RemoveLast();
 
+    // Removes the primitive with the given id, if any. Returns false when there is none.
+    bool RemoveById(std::uint64_t id);
+
     void Clear();
 
     [[nodiscard]] const std::vector<Primitive>& Primitives() const { return m_primitives; }

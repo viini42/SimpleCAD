@@ -1,5 +1,7 @@
 #include "scene/scene.hpp"
 
+#include <algorithm>
+
 std::uint64_t simple_cad::Scene::Add(ShapeVariant shape, Color color)
 {
   const std::uint64_t id = m_next_id;
@@ -39,6 +41,16 @@ bool simple_cad::Scene::RemoveLast()
     return false;
 
   m_primitives.pop_back();
+  return true;
+}
+
+bool simple_cad::Scene::RemoveById(std::uint64_t id)
+{
+  const auto it = std::ranges::find(m_primitives, id, &Primitive::id);
+  if (it == m_primitives.end())
+    return false;
+
+  m_primitives.erase(it);
   return true;
 }
 
