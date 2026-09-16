@@ -316,6 +316,8 @@ void simple_cad::CommandInterpreter::Dispatch(const std::vector<std::string>& to
     CmdClear();
   else if (command == "undo")
     CmdUndo();
+  else if (command == "delete" || command == "erase" || command == "del")
+    CmdDelete(args);
   else if (command == "list")
     CmdList();
   else if (command == "help" || command == "?")
@@ -681,6 +683,7 @@ void simple_cad::CommandInterpreter::CmdOpen(const std::vector<std::string>& arg
 void simple_cad::CommandInterpreter::CmdClear()
 {
   m_scene.Clear();
+  m_state.selected_primitive_id.reset();
   Log("Scene cleared.");
 }
 
@@ -690,6 +693,42 @@ void simple_cad::CommandInterpreter::CmdUndo()
     LogError("Nothing to undo.");
   else
     Log("Last primitive removed.");
+}
+
+void simple_cad::CommandInterpreter::CmdDelete(const std::vector<std::string>& args)
+{
+  std::uint64_t target_id{};
+
+  if (args.empty())
+  {
+    if (!m_state.selected_primitive_id)
+    {
+      LogError("DELETE: nothing selected. Click a shape first, or use 'delete <id>'.");
+      return;
+    }
+    target_id = *m_state.selected_primitive_id;
+  }
+  else
+  {
+    const auto parsed = ParseNumber(args[0]);
+    if (!parsed || *parsed < 0.0)
+    {
+      LogError("DELETE: expected a primitive id.");
+      return;
+    }
+    target_id = static_cast<std::uint64_t>(*parsed);
+  }
+
+  if (!m_scene.RemoveById(target_id))
+  {
+    LogError("DELETE: no primitive with id " + std::to_string(target_id) + ".");
+    return;
+  }
+
+  if (m_state.selected_primitive_id && *m_state.selected_primitive_id == target_id)
+    m_state.selected_primitive_id.reset();
+
+  Log("Deleted primitive #" + std::to_string(target_id) + ".");
 }
 
 void simple_cad::CommandInterpreter::CmdList()
@@ -754,8 +793,12 @@ void simple_cad::CommandInterpreter::CmdHelp()
   Log("  open <path>          | load               replace the scene with a saved model file");
   Log("  list                                     list every primitive");
   Log("  undo                                     remove the last primitive");
+  Log("  delete [id]  | erase, del                 delete the selected (or given id) primitive");
   Log("  clear                                    remove every primitive");
   Log("  cancel                                   abort the current command");
   Log("  quit | exit                              close the application");
-  Log("Shortcuts: F2 zoom fit, F7 toggle grid, F8 toggle snap, F9 toggle osnap, Escape cancel.");
+  Log(
+    "Click a shape (when no command is pending) to select it; Delete key or 'delete' removes it.");
+  Log("Shortcuts: F2 zoom fit, F7 toggle grid, F8 toggle snap, F9 toggle osnap, Escape "
+      "cancel/deselect.");
 }

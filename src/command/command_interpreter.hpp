@@ -62,6 +62,7 @@ namespace simple_cad
     void CmdOpen(const std::vector<std::string>& args);
     void CmdClear();
     void CmdUndo();
+    void CmdDelete(const std::vector<std::string>& args);
     void CmdList();
     void CmdHelp();
 
