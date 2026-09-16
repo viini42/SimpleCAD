@@ -4,6 +4,7 @@
 #include "core/color.hpp"
 #include "core/snap.hpp"
 #include "core/vec2.hpp"
+#include "geometry/hit_test.hpp"
 #include "geometry/object_snap.hpp"
 #include "geometry/primitive.hpp"
 #include "io/model_reader.hpp"
@@ -189,6 +190,80 @@ namespace
     scene.Clear();
     CHECK(scene.Primitives().empty());
     CHECK(!scene.RemoveLast());
+  }
+
+  void TestSceneRemoveById()
+  {
+    simple_cad::Scene scene;
+    const auto first_id = scene.AddPoint({ 0.0, 0.0 }, {});
+    const auto second_id = scene.AddLine({ 0.0, 0.0 }, { 1.0, 1.0 }, {});
+    scene.AddCircle({ 5.0, 5.0 }, 2.0, {});
+    CHECK(scene.Primitives().size() == 3);
+
+    // Removing a primitive that isn't the last one exercises the by-id path specifically.
+    CHECK(scene.RemoveById(second_id));
+    CHECK(scene.Primitives().size() == 2);
+    CHECK(!std::ranges::any_of(scene.Primitives(),
+                               [second_id](const simple_cad::Primitive& p)
+                               { return p.id == second_id; }));
+    CHECK(std::ranges::any_of(scene.Primitives(),
+                              [first_id](const simple_cad::Primitive& p)
+                              { return p.id == first_id; }));
+
+    CHECK(!scene.RemoveById(second_id)); // already gone
+    CHECK(!scene.RemoveById(999));       // never existed
+  }
+
+  void TestDistanceToShape()
+  {
+    using simple_cad::DistanceToShape;
+
+    CHECK(NearlyEqual(DistanceToShape({ 3.0, 4.0 }, simple_cad::PointShape{ { 0.0, 0.0 } }), 5.0));
+
+    // Perpendicular distance to a horizontal segment, plus clamping past its endpoint.
+    const simple_cad::LineShape horizontal_line{ { 0.0, 0.0 }, { 10.0, 0.0 } };
+    CHECK(NearlyEqual(DistanceToShape({ 5.0, 3.0 }, horizontal_line), 3.0));
+    CHECK(NearlyEqual(DistanceToShape({ 15.0, 0.0 }, horizontal_line), 5.0));
+
+    const simple_cad::CircleShape circle{ { 0.0, 0.0 }, 5.0 };
+    CHECK(NearlyEqual(DistanceToShape({ 5.0, 0.0 }, circle), 0.0));
+    CHECK(NearlyEqual(DistanceToShape({ 8.0, 0.0 }, circle), 3.0));
+    CHECK(NearlyEqual(DistanceToShape({ 0.0, 0.0 }, circle), 5.0)); // circumference, not fill
+
+    const simple_cad::RectShape rect{ { 0.0, 0.0 }, { 10.0, 10.0 } };
+    CHECK(NearlyEqual(DistanceToShape({ 5.0, 0.0 }, rect), 0.0)); // on an edge
+    CHECK(NearlyEqual(DistanceToShape({ 5.0, 5.0 }, rect), 5.0)); // interior isn't a hit
+    CHECK(NearlyEqual(DistanceToShape({ -3.0, 0.0 }, rect), 3.0));
+
+    const simple_cad::PolylineShape polyline{ { { 0.0, 0.0 }, { 10.0, 0.0 }, { 10.0, 10.0 } } };
+    CHECK(NearlyEqual(DistanceToShape({ 10.0, 5.0 }, polyline), 0.0)); // on the second segment
+    CHECK(NearlyEqual(DistanceToShape({ 5.0, 2.0 }, polyline), 2.0));  // near the first segment
+  }
+
+  void TestSelectAndDeleteCommandFlow()
+  {
+    simple_cad::Scene scene;
+    simple_cad::Camera camera;
+    simple_cad::AppState state;
+    simple_cad::CommandConsole console([](const std::string&) {});
+    simple_cad::CommandInterpreter interpreter(scene, camera, state, console, [] {});
+
+    const auto point_id = scene.AddPoint({ 0.0, 0.0 }, {});
+    const auto line_id = scene.AddLine({ 5.0, 5.0 }, { 6.0, 6.0 }, {});
+
+    interpreter.Execute("delete");
+    CHECK(scene.Primitives().size() == 2); // nothing selected yet, nothing removed
+
+    state.selected_primitive_id = point_id;
+    interpreter.Execute("delete");
+    CHECK(scene.Primitives().size() == 1);
+    CHECK(!state.selected_primitive_id.has_value()); // deleting the selection clears it
+
+    interpreter.Execute("delete " + std::to_string(line_id));
+    CHECK(scene.Primitives().empty());
+
+    interpreter.Execute("delete 999");
+    CHECK(scene.Primitives().empty()); // no such id: logs an error, nothing crashes
   }
 
   bool HasCandidateNear(const std::vector<simple_cad::SnapCandidate>& candidates,
@@ -483,6 +558,9 @@ int main()
   TestCameraFit();
   TestComputeBounds();
   TestScene();
+  TestSceneRemoveById();
+  TestDistanceToShape();
+  TestSelectAndDeleteCommandFlow();
   TestObjectSnapCandidates();
   TestPolylineCommandFlow();
   TestXyReader();
