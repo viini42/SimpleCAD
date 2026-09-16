@@ -26,6 +26,8 @@ namespace
   constexpr simple_cad::Color BUTTON_TEXT_COLOR{ 220, 222, 228, 255 };
   constexpr simple_cad::Color SWATCH_BORDER_COLOR{ 70, 73, 80, 255 };
   constexpr simple_cad::Color SWATCH_SELECTED_BORDER_COLOR{ 230, 200, 60, 255 };
+  constexpr simple_cad::Color SECTION_TITLE_COLOR{ 140, 145, 155, 255 };
+  constexpr simple_cad::Color SECTION_DIVIDER_COLOR{ 55, 58, 64, 255 };
 
   constexpr float LINE_HEIGHT = 14.0f;
   constexpr float PADDING = 6.0f;
@@ -354,6 +356,20 @@ void simple_cad::Renderer::DrawRibbon(const Ribbon& ribbon,
                                swatch.bounds.w + 2.0f,
                                swatch.bounds.h + 2.0f };
       SDL_RenderRect(m_renderer, &outline);
+    }
+  }
+
+  const std::vector<Ribbon::Section>& sections = ribbon.Sections();
+  for (std::size_t i = 0; i < sections.size(); ++i)
+  {
+    const Ribbon::Section& section = sections[i];
+    DrawText(section.left, ribbon.CaptionY(), section.title, SECTION_TITLE_COLOR);
+
+    if (i + 1 < sections.size())
+    {
+      const float divider_x = (section.right + sections[i + 1].left) / 2.0f;
+      SetDrawColor(SECTION_DIVIDER_COLOR);
+      SDL_RenderLine(m_renderer, divider_x, ribbon.ContentTop(), divider_x, ribbon.ContentBottom());
     }
   }
 }

@@ -159,9 +159,17 @@ void simple_cad::Application::HandleMouseButtonDown(const SDL_MouseButtonEvent& 
 
   if (event.button == SDL_BUTTON_LEFT)
   {
-    if (const auto command = m_ribbon.HitTestButton(screen))
+    if (const auto button = m_ribbon.HitTestButton(screen))
     {
-      m_interpreter.Execute(*command);
+      if (button->prefill)
+      {
+        m_console.ClearInput();
+        m_console.AppendText(button->command);
+      }
+      else
+      {
+        m_interpreter.Execute(button->command);
+      }
       return;
     }
 
