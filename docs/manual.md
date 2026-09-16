@@ -16,15 +16,20 @@ it before you can type.
 
 ## 2. The ribbon
 
-The ribbon has two parts:
+The ribbon is split into two labeled sections (a thin vertical line separates
+them, with the section name printed underneath):
 
-- Four buttons — **Point**, **Line**, **Circle**, **Polyline** — each one
-  starts that command, exactly as if you'd typed it into the console. If a
-  different command is already in progress, clicking a button doesn't cancel
-  it (same as typing a command name mid-command would log an error).
-- A 3x4 grid of color swatches. Clicking one is the same as typing
-  `color <name>` for that swatch. Whichever swatch matches the current draw
-  color is outlined to show it's selected.
+- **File** — **Save** and **Open** buttons. Since both need a file path,
+  clicking one doesn't run anything by itself — it clears the console's
+  input line and types `save `/`open ` into it for you, cursor ready, so you
+  just add the path and press Enter.
+- **Creation** — the **Point**, **Line**, **Circle**, **Polyline** buttons
+  (each one starts that command immediately, exactly as if you'd typed it —
+  if a different command is already in progress, clicking one doesn't cancel
+  it, same as typing a command name mid-command would log an error), plus the
+  3x4 grid of color swatches. Clicking a swatch is the same as typing
+  `color <name>` for it. Whichever swatch matches the current draw color is
+  outlined to show it's selected.
 
 Every ribbon click reaches the canvas the same way typing would, so anything
 you can do with the ribbon, you can also do — and always could do — from the
@@ -156,7 +161,8 @@ names; `color` with no arguments prints the current one.
 
 ## 8. Saving, opening and importing
 
-**Save your work:**
+**Save your work:** (or click **Save** in the ribbon's File section, which
+pre-fills this for you — see [2. The ribbon](#2-the-ribbon))
 
 ```
 save drawing.cad

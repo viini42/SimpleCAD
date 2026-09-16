@@ -3,11 +3,13 @@
 Typed into the console at the bottom of the window, then submitted with **Enter**.
 Tokens are separated by spaces and/or commas, so `10,20` and `10 20` are equivalent.
 
-The ribbon across the top of the window is a shortcut for a few of these —
-`point`/`line`/`circle`/`polyline` as buttons, and `color <name>` as a grid of
-swatches — see [docs/manual.md](manual.md#2-the-ribbon). Every ribbon click
-runs the exact command it's a shortcut for, so everything below applies to it
-too.
+The ribbon across the top of the window is a shortcut for a few of these,
+grouped into a **File** section (**Save**/**Open**, which pre-fill the
+console with `save `/`open ` rather than running immediately, since both need
+a path) and a **Creation** section (`point`/`line`/`circle`/`polyline` as
+buttons that do run immediately, and `color <name>` as a grid of swatches) —
+see [docs/manual.md](manual.md#2-the-ribbon). Every ribbon click reaches the
+console the same way typing would, so everything below applies to it too.
 
 A command that needs points can be given:
 - fully inline: `line 0 0 10 10`
