@@ -154,21 +154,34 @@ color
 existing shapes keep their original color. `color list` prints the built-in
 names; `color` with no arguments prints the current one.
 
-## 8. Importing a file
+## 8. Saving, opening and importing
+
+**Save your work:**
 
 ```
-import example.xy
+save drawing.cad
 ```
 
-`import <path>` (or `open <path>`) loads a `HED_XY` file — a plain-text format
-that stores topological vertices and edges (each edge carrying its own
-polyline geometry). Every vertex in the file becomes a `point`; every edge
-becomes a `polyline`. The view automatically zooms to fit whatever was
-imported, since these files are usually in a coordinate range far from the
-origin. The repo's `example.xy` is a real one to try this on.
+`save <path>` writes everything currently in the scene — every shape, with
+its exact color and geometry — to a small JSON file. Later, in this session
+or a new one:
 
-If the path doesn't exist or the file isn't valid `HED_XY` content, nothing
-is added and an error is logged instead.
+```
+open drawing.cad
+```
+
+`open <path>` (or `load <path>`) reads that file back and **replaces**
+whatever's currently in the scene with it (so if you want to keep the current
+drawing too, `save` it first). The view zooms to fit whatever was loaded.
+
+**Run a HED_XY file as a script:** `import <path>` is a different thing —
+it reads a `HED_XY` file (a plain-text format for topological vertices and
+edges, produced by other tools, not by `save`) and **adds** a `point` per
+vertex and a `polyline` per edge to whatever's already in the scene. Think of
+it as pasting geometry from an external source, not opening a saved drawing.
+
+If a path given to any of these three commands doesn't exist, or its content
+isn't valid for that command, nothing changes and an error is logged.
 
 ## 9. Reviewing and cleaning up
 

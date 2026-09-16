@@ -4,8 +4,9 @@ A small 2D CAD sandbox written in C++23 and SDL3. Draw points, lines, circles,
 rectangles and polylines by typing coordinates into an always-on command
 console (AutoCAD-style), by clicking on the canvas, or via the ribbon toolbar
 across the top of the window. Supports panning, zooming, fit-to-window, grid
-display, grid and object snapping, importing HED_XY files, and per-primitive
-colors.
+display, grid and object snapping, per-primitive colors, saving/opening your
+own drawings as a small JSON model file, and running HED_XY files as a
+one-shot "script" that adds geometry to the scene.
 
 ## Building
 

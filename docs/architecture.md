@@ -15,13 +15,28 @@ on earlier ones).
 - `scene/` — `Scene` owns the `std::vector<Primitive>` for the current drawing
   and exposes add/remove/clear and an aggregate bounding box (used by
   `zoom fit`).
-- `io/` — file formats in and out of the app. `xy_reader.hpp` parses the
-  `HED_XY` text format (a topology dump: numbered vertices, plus edges that
-  carry their own discretized point list) into plain data (`XyDocument`), with
-  no dependency on `Scene` — it's pure parsing, testable on its own.
-  `xy_importer.hpp` is the thin glue on top that turns an `XyDocument` into
-  primitives (`AddPoint` per vertex, `AddPolyline` per edge, skipping any edge
-  with fewer than 2 points).
+- `io/` — file formats in and out of the app, all JSON/text parsing done via
+  [nlohmann/json](https://github.com/nlohmann/json) (fetched via
+  `FetchContent`, like SDL3) — never exposed in a header, only inside the
+  `.cpp` files, so nothing outside `io/` needs to know it's there.
+  - `model_writer.hpp`/`model_reader.hpp` are this app's own persistence
+    format: a lossless, flat JSON list of primitives (type + color + exact
+    geometry), written by `save` and read back by `open`. `ReadModelFile`
+    returns a whole new `Scene` (not a `Scene&` to add into, unlike the HED_XY
+    importer below) precisely because `open` *replaces* the current one —
+    see the `CmdOpen` note below. A file that doesn't fully parse is rejected
+    outright (no partial load), since — unlike an externally-produced HED_XY
+    file — this format is entirely under this app's control, so anything
+    malformed means something is actually wrong.
+  - `xy_reader.hpp` parses the `HED_XY` text format (a topology dump:
+    numbered vertices, plus edges that carry their own discretized point
+    list) into plain data (`XyDocument`), with no dependency on `Scene` —
+    it's pure parsing, testable on its own. `xy_importer.hpp` is the thin
+    glue on top that turns an `XyDocument` into primitives (`AddPoint` per
+    vertex, `AddPolyline` per edge, skipping any edge with fewer than 2
+    points) *added into* an existing `Scene&` — this is `import`, a one-shot
+    script that layers geometry onto whatever's already drawn, not a way to
+    persist or reload a SimpleCad drawing.
 - `render/` — `Camera` converts between world coordinates (Y up, CAD units)
   and screen coordinates (Y down, pixels), and implements pan/zoom/fit.
   `Renderer` draws the grid, axes, every primitive, and the HUD, using plain
@@ -40,8 +55,13 @@ on earlier ones).
   without a dependency cycle; `CommandInterpreter` is the state machine that
   runs commands and drives multi-step, AutoCAD-style point collection
   (`SubmitPoint`), whether the point comes from typed text or a mouse click.
-  `CmdImport` is the one command that reaches into `io/` rather than adding to
-  the scene directly, and re-fits the camera on success.
+  `CmdImport`, `CmdSave` and `CmdOpen` are the commands that reach into `io/`.
+  `CmdOpen` is the odd one out: since `ReadModelFile` hands back a whole
+  `Scene` rather than adding to the existing one, and `m_scene` is a
+  reference (`Scene&`) to `Application`'s member, replacing its *content* —
+  not the reference itself, which can't be reseated — is one assignment
+  through it: `m_scene = std::move(*loaded);`. All three re-fit the camera on
+  success.
 - `app/` — `AppState` is the small bag of shared, mutable settings (current
   color, grid size/visibility, grid-snap/object-snap on/off) read and written
   by both the interpreter and the renderer. `Application` owns the SDL

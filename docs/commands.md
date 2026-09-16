@@ -31,23 +31,46 @@ vertex. While it's collecting points, three extra keywords are accepted:
 `polyline` needs at least 2 points before `done`/`close` will finish it;
 otherwise it stays pending and logs an error.
 
-## Importing a HED_XY file
+## Saving and opening a model
 
-`import <path>` (or `open <path>`) reads a file in the `HED_XY` text format —
-a list of topological vertices plus edges, each edge carrying its own
-discretized geometry (see `src/io/xy_reader.hpp` for the exact grammar). Every
-vertex becomes a `point`; every edge becomes a `polyline` using its own point
-list (so a straight 2-point edge renders identically to a `line`). New
-primitives use the current draw color, and the view is automatically framed
-to the imported geometry afterward, since HED_XY coordinates are typically far
-from the origin and a very different scale from the default view.
+`save <path>` writes every primitive currently in the scene — full fidelity,
+including color and shape-specific geometry — to a JSON model file (no
+particular extension is required; `.cad` is the suggested convention).
+`open <path>` (or `load <path>`) reads one back, **replacing** whatever is
+currently in the scene (unlike `import`, below, which adds to it) and framing
+the view to the loaded geometry. If the path doesn't exist or isn't a valid
+model file, nothing changes and an error is logged.
 
-The path is everything after the command word, so `import my file.xy` works
-for a path with (single) spaces; it cannot contain a comma or repeated
-whitespace, since those are the console's token separators. Import fails
-(with an error logged, nothing added) if the file is missing or isn't valid
-HED_XY content; an edge with fewer than 2 points is skipped rather than
-failing the whole import.
+```
+save drawing.cad
+clear
+open drawing.cad
+```
+
+See `src/io/model_writer.hpp`/`model_reader.hpp` for the exact JSON shape, or
+just open a saved file in a text editor — it's a small, readable document.
+
+## Running a HED_XY file as a script
+
+`import <path>` reads a file in the `HED_XY` text format — a list of
+topological vertices plus edges, each edge carrying its own discretized
+geometry (see `src/io/xy_reader.hpp` for the exact grammar). This is a
+different, external format (produced by other tools, not by `save`); treat
+it as a one-shot "script" that **adds** points and polylines to whatever's
+already in the scene, rather than a way to persist a SimpleCad drawing —
+that's what `save`/`open` are for. Every vertex becomes a `point`; every edge
+becomes a `polyline` using its own point list (so a straight 2-point edge
+renders identically to a `line`). New primitives use the current draw color,
+and the view is automatically framed to the imported geometry afterward,
+since HED_XY coordinates are typically far from the origin and a very
+different scale from the default view.
+
+The path (for `import`, `save` and `open` alike) is everything after the
+command word, so `import my file.xy` works for a path with (single) spaces;
+it cannot contain a comma or repeated whitespace, since those are the
+console's token separators. Import fails (with an error logged, nothing
+added) if the file is missing or isn't valid HED_XY content; an edge with
+fewer than 2 points is skipped rather than failing the whole import.
 
 | Command | Aliases | Arguments | Effect |
 |---|---|---|---|
@@ -66,7 +89,9 @@ failing the whole import.
 | `zoom in` / `zoom out` | | | Zooms by a fixed step, centered on the viewport. |
 | `zoom fit` | `zoom extents` | | Frames every primitive in the scene. |
 | `zoom <factor>` | | a number | Multiplies the current zoom scale by `factor`. |
-| `import <path>` | `open` | a file path | Loads a HED_XY file: each vertex becomes a point, each edge becomes a polyline. Auto-fits the view afterward. |
+| `save <path>` | | a file path | Saves the current scene to a model file (JSON). |
+| `open <path>` | `load` | a file path | Replaces the scene with a saved model file. Auto-fits the view afterward. |
+| `import <path>` | | a file path | Runs a HED_XY "script": adds points/polylines from it to the scene. Auto-fits the view afterward. |
 | `list` | | | Lists every primitive with its id and coordinates. |
 | `undo` | | | Removes the most recently added primitive. |
 | `clear` | | | Removes every primitive. |
