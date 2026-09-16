@@ -6,6 +6,8 @@
 #include "core/vec2.hpp"
 #include "geometry/object_snap.hpp"
 #include "geometry/primitive.hpp"
+#include "io/model_reader.hpp"
+#include "io/model_writer.hpp"
 #include "io/xy_importer.hpp"
 #include "io/xy_reader.hpp"
 #include "render/camera.hpp"
@@ -15,6 +17,8 @@
 
 #include <cmath>
 #include <cstdio>
+#include <fstream>
+#include <string_view>
 #include <variant>
 
 namespace
@@ -269,43 +273,151 @@ namespace
     CHECK(scene.Primitives().size() == count_before_cancel);
   }
 
+  // Writes `content` to a fresh file under the test binary's own build directory and
+  // returns its path. Self-contained: no fixture file needs to be bundled/committed.
+  std::string WriteScratchFile(std::string_view name, std::string_view content)
+  {
+    const std::string path = std::string(SIMPLECAD_TEST_SCRATCH_DIR) + "/" + std::string(name);
+    std::ofstream out(path);
+    out << content;
+    return path;
+  }
+
+  // 3 vertices; one 2-point edge (a valid polyline) and one 1-point edge (too short to
+  // form a polyline, exercising the importer's skip path).
+  constexpr std::string_view SAMPLE_HED_XY = "HED_XY 1\n"
+                                             "VERTICES 3\n"
+                                             "1 0.0 0.0\n"
+                                             "2 10.0 0.0\n"
+                                             "3 5.0 5.0\n"
+                                             "EDGES 2\n"
+                                             "1 1 2 2\n"
+                                             "0.0 0.0\n"
+                                             "10.0 0.0\n"
+                                             "2 2 3 1\n"
+                                             "10.0 0.0\n";
+
   void TestXyReader()
   {
     CHECK(!simple_cad::ReadXyFile("/no/such/file.xy").has_value());
 
-    const auto document = simple_cad::ReadXyFile(SIMPLECAD_EXAMPLE_XY_PATH);
+    const std::string path = WriteScratchFile("xy_reader_sample.xy", SAMPLE_HED_XY);
+    const auto document = simple_cad::ReadXyFile(path);
     CHECK(document.has_value());
     if (!document)
       return;
 
-    CHECK(document->vertices.size() == 81);
-    CHECK(document->edges.size() == 80);
+    CHECK(document->vertices.size() == 3);
+    CHECK(document->edges.size() == 2);
 
-    CHECK(document->vertices.front().id == 82);
-    CHECK(NearlyEqual(document->vertices.front().position.x, 3798.7044281026469, 1e-6));
-    CHECK(NearlyEqual(document->vertices.front().position.y, -6174.0704655689869, 1e-6));
+    CHECK(document->vertices.front().id == 1);
+    CHECK(NearlyEqual(document->vertices.front().position.x, 0.0));
+    CHECK(NearlyEqual(document->vertices.front().position.y, 0.0));
 
-    CHECK(document->edges.front().id == 80);
-    CHECK(document->edges.front().start_id == 80);
-    CHECK(document->edges.front().end_id == 82);
+    CHECK(document->edges.front().id == 1);
+    CHECK(document->edges.front().start_id == 1);
+    CHECK(document->edges.front().end_id == 2);
     CHECK(document->edges.front().points.size() == 2);
+    CHECK(document->edges.back().points.size() == 1);
   }
 
   void TestXyImport()
   {
     simple_cad::Scene scene;
-    const auto result =
-      simple_cad::ImportXyFile(scene, SIMPLECAD_EXAMPLE_XY_PATH, simple_cad::Color{});
+    const std::string path = WriteScratchFile("xy_import_sample.xy", SAMPLE_HED_XY);
+    const auto result = simple_cad::ImportXyFile(scene, path, simple_cad::Color{});
     CHECK(result.has_value());
     if (!result)
       return;
 
-    CHECK(result->points_imported == 81);
-    CHECK(result->edges_imported == 80);
-    CHECK(result->edges_skipped == 0);
-    CHECK(scene.Primitives().size() == 161);
+    CHECK(result->points_imported == 3);
+    CHECK(result->edges_imported == 1);
+    CHECK(result->edges_skipped == 1);
+    CHECK(scene.Primitives().size() == 4);
 
     CHECK(!simple_cad::ImportXyFile(scene, "/no/such/file.xy", simple_cad::Color{}).has_value());
+  }
+
+  void TestModelWriterAndReader()
+  {
+    simple_cad::Scene scene;
+    scene.AddPoint({ 1.0, 2.0 }, simple_cad::Color{ 10, 20, 30, 255 });
+    scene.AddLine({ 0.0, 0.0 }, { 5.0, 5.0 }, simple_cad::Color{ 255, 0, 0, 255 });
+    scene.AddCircle({ 2.0, 2.0 }, 3.5, simple_cad::Color{ 0, 255, 0, 255 });
+    scene.AddRect({ -1.0, -1.0 }, { 1.0, 1.0 }, simple_cad::Color{ 0, 0, 255, 255 });
+    scene.AddPolyline({ { 0.0, 0.0 }, { 1.0, 1.0 }, { 2.0, 0.0 } },
+                      simple_cad::Color{ 128, 64, 200, 255 });
+
+    const std::string path = std::string(SIMPLECAD_TEST_SCRATCH_DIR) + "/model_roundtrip.cad";
+    CHECK(simple_cad::WriteModelFile(scene, path));
+
+    const auto loaded = simple_cad::ReadModelFile(path);
+    CHECK(loaded.has_value());
+    if (!loaded)
+      return;
+
+    const auto& original = scene.Primitives();
+    const auto& restored = loaded->Primitives();
+    CHECK(restored.size() == original.size());
+    for (std::size_t i = 0; i < original.size() && i < restored.size(); ++i)
+    {
+      CHECK(restored[i].color == original[i].color);
+      CHECK(restored[i].shape.index() == original[i].shape.index());
+    }
+
+    const auto& restored_polyline = std::get<simple_cad::PolylineShape>(restored.back().shape);
+    CHECK(restored_polyline.points.size() == 3);
+    CHECK(NearlyEqual(restored_polyline.points[1].x, 1.0));
+    CHECK(NearlyEqual(restored_polyline.points[1].y, 1.0));
+
+    CHECK(!simple_cad::ReadModelFile("/no/such/file.cad").has_value());
+  }
+
+  void TestModelReaderRejectsInvalidContent()
+  {
+    const std::string malformed_path = WriteScratchFile("model_malformed.cad", "{ not valid json");
+    CHECK(!simple_cad::ReadModelFile(malformed_path).has_value());
+
+    const std::string no_primitives_path =
+      WriteScratchFile("model_no_primitives.cad", R"({"format":"SimpleCadModel","version":1})");
+    CHECK(!simple_cad::ReadModelFile(no_primitives_path).has_value());
+
+    // A polyline needs at least 2 points; this one only has 1.
+    const std::string bad_primitive_path = WriteScratchFile(
+      "model_bad_primitive.cad",
+      R"({"primitives":[{"type":"polyline","color":[1,2,3,255],"points":[{"x":0,"y":0}]}]})");
+    CHECK(!simple_cad::ReadModelFile(bad_primitive_path).has_value());
+  }
+
+  void TestSaveOpenCommandFlow()
+  {
+    simple_cad::Scene scene;
+    simple_cad::Camera camera;
+    simple_cad::AppState state;
+    simple_cad::CommandConsole console([](const std::string&) {});
+    simple_cad::CommandInterpreter interpreter(scene, camera, state, console, [] {});
+
+    interpreter.Execute("point 1 1");
+    interpreter.Execute("line 0 0 5 5");
+    CHECK(scene.Primitives().size() == 2);
+
+    const std::string path = std::string(SIMPLECAD_TEST_SCRATCH_DIR) + "/save_open_flow.cad";
+    interpreter.Execute("save " + path);
+
+    interpreter.Execute("point 9 9");
+    CHECK(scene.Primitives().size() == 3);
+
+    interpreter.Execute("open " + path);
+    CHECK(scene.Primitives().size() == 2); // replaced, not appended
+
+    interpreter.Execute("clear");
+    CHECK(scene.Primitives().empty());
+
+    interpreter.Execute("load " + path); // alias for "open"
+    CHECK(scene.Primitives().size() == 2);
+
+    interpreter.Execute("open /no/such/file.cad");
+    CHECK(scene.Primitives().size() == 2); // unchanged on failure
   }
 
   void TestRibbonHitTesting()
@@ -353,6 +465,9 @@ int main()
   TestPolylineCommandFlow();
   TestXyReader();
   TestXyImport();
+  TestModelWriterAndReader();
+  TestModelReaderRejectsInvalidContent();
+  TestSaveOpenCommandFlow();
   TestRibbonHitTesting();
 
   std::fprintf(stdout, "%d/%d checks passed\n", g_checks - g_failures, g_checks);
