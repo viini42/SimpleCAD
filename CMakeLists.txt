@@ -25,6 +25,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SDL3)
 
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+FetchContent_Declare(
+  nlohmann_json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG v3.12.0
+  GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 add_library(simple_cad_core STATIC
   src/core/color.cpp
   src/core/snap.cpp
@@ -34,6 +43,8 @@ add_library(simple_cad_core STATIC
   src/scene/scene.cpp
   src/io/xy_reader.cpp
   src/io/xy_importer.cpp
+  src/io/model_writer.cpp
+  src/io/model_reader.cpp
   src/render/camera.cpp
   src/ui/command_console.cpp
   src/ui/ribbon.cpp
@@ -45,6 +56,7 @@ add_library(simple_cad_core STATIC
 
 target_include_directories(simple_cad_core PUBLIC src)
 target_link_libraries(simple_cad_core PUBLIC SDL3::SDL3)
+target_link_libraries(simple_cad_core PRIVATE nlohmann_json::nlohmann_json)
 target_compile_features(simple_cad_core PUBLIC cxx_std_23)
 
 if(MSVC)
