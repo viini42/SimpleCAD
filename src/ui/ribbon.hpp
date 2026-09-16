@@ -26,6 +26,11 @@ namespace simple_cad
       // true: the button pre-fills the console input with `command` for the user to finish
       // typing (e.g. a file path) rather than running it immediately.
       bool prefill{ false };
+      // true: the button only does something when a primitive is selected (AppState's
+      // selected_primitive_id) — Renderer draws it dimmed and Application ignores clicks
+      // on it otherwise. Ribbon itself has no AppState to check this against; it just
+      // tags the button so those two can.
+      bool requires_selection{ false };
     };
 
     struct Swatch

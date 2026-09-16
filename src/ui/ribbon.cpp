@@ -21,20 +21,25 @@ namespace
     std::string_view label;
     std::string_view command;
     bool prefill{ false };
+    bool requires_selection{ false };
   };
 
   // Save/Open need a file path, so their buttons pre-fill the console input (with a
   // trailing space, cursor ready) instead of running the bare command.
   constexpr std::array<ButtonSpec, 2> FILE_BUTTON_SPECS{ {
-    { "Save", "save ", true },
-    { "Open", "open ", true },
+    { "Save", "save ", true, false },
+    { "Open", "open ", true, false },
   } };
 
   constexpr std::array<ButtonSpec, 4> CREATE_BUTTON_SPECS{ {
-    { "Point", "point", false },
-    { "Line", "line", false },
-    { "Circle", "circle", false },
-    { "Polyline", "polyline", false },
+    { "Point", "point", false, false },
+    { "Line", "line", false, false },
+    { "Circle", "circle", false, false },
+    { "Polyline", "polyline", false, false },
+  } };
+
+  constexpr std::array<ButtonSpec, 1> EDIT_BUTTON_SPECS{ {
+    { "Delete", "delete", false, true },
   } };
 
   constexpr float SWATCH_GRID_HEIGHT = SWATCH_ROWS * SWATCH_SIZE + (SWATCH_ROWS - 1) * SWATCH_GAP;
@@ -61,7 +66,8 @@ namespace
       buttons.push_back(simple_cad::Ribbon::Button{ SDL_FRect{ x, y, BUTTON_WIDTH, BUTTON_HEIGHT },
                                                     std::string(spec.label),
                                                     std::string(spec.command),
-                                                    spec.prefill });
+                                                    spec.prefill,
+                                                    spec.requires_selection });
       x += BUTTON_WIDTH + BUTTON_GAP;
     }
     return x;
@@ -103,6 +109,12 @@ simple_cad::Ribbon::Ribbon()
   const float create_right =
     swatch_start_x + static_cast<float>(SWATCH_COLUMNS) * (SWATCH_SIZE + SWATCH_GAP) - SWATCH_GAP;
   m_sections.push_back(Section{ create_left, create_right, "Creation" });
+
+  cursor_x = create_right + SECTION_GAP;
+  const float edit_left = cursor_x;
+  cursor_x = AppendButtons(m_buttons, EDIT_BUTTON_SPECS, edit_left, button_y);
+  const float edit_right = cursor_x - BUTTON_GAP;
+  m_sections.push_back(Section{ edit_left, edit_right, "Edit" });
 }
 
 std::optional<simple_cad::Ribbon::Button> simple_cad::Ribbon::HitTestButton(Vec2 screen_pos) const

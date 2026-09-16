@@ -24,6 +24,9 @@ namespace
   constexpr simple_cad::Color BUTTON_COLOR{ 40, 42, 48, 255 };
   constexpr simple_cad::Color BUTTON_BORDER_COLOR{ 95, 100, 110, 255 };
   constexpr simple_cad::Color BUTTON_TEXT_COLOR{ 220, 222, 228, 255 };
+  constexpr simple_cad::Color BUTTON_DISABLED_COLOR{ 30, 31, 34, 255 };
+  constexpr simple_cad::Color BUTTON_DISABLED_BORDER_COLOR{ 55, 57, 62, 255 };
+  constexpr simple_cad::Color BUTTON_DISABLED_TEXT_COLOR{ 95, 97, 102, 255 };
   constexpr simple_cad::Color SWATCH_BORDER_COLOR{ 70, 73, 80, 255 };
   constexpr simple_cad::Color SWATCH_SELECTED_BORDER_COLOR{ 230, 200, 60, 255 };
   constexpr simple_cad::Color SECTION_TITLE_COLOR{ 140, 145, 155, 255 };
@@ -360,14 +363,16 @@ void simple_cad::Renderer::DrawRibbon(const Ribbon& ribbon,
 
   for (const Ribbon::Button& button : ribbon.Buttons())
   {
-    SetDrawColor(BUTTON_COLOR);
+    const bool enabled = !button.requires_selection || state.selected_primitive_id.has_value();
+
+    SetDrawColor(enabled ? BUTTON_COLOR : BUTTON_DISABLED_COLOR);
     SDL_RenderFillRect(m_renderer, &button.bounds);
-    SetDrawColor(BUTTON_BORDER_COLOR);
+    SetDrawColor(enabled ? BUTTON_BORDER_COLOR : BUTTON_DISABLED_BORDER_COLOR);
     SDL_RenderRect(m_renderer, &button.bounds);
     DrawText(button.bounds.x + 4.0f,
              button.bounds.y + (button.bounds.h - 8.0f) / 2.0f,
              button.label,
-             BUTTON_TEXT_COLOR);
+             enabled ? BUTTON_TEXT_COLOR : BUTTON_DISABLED_TEXT_COLOR);
   }
 
   for (const Ribbon::Swatch& swatch : ribbon.Swatches())

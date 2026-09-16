@@ -168,6 +168,11 @@ void simple_cad::Application::HandleMouseButtonDown(const SDL_MouseButtonEvent& 
   {
     if (const auto button = m_ribbon.HitTestButton(screen))
     {
+      // A disabled button (e.g. Delete with nothing selected) still consumes the click —
+      // it just does nothing, the same as clicking any other disabled control would.
+      if (button->requires_selection && !m_state.selected_primitive_id)
+        return;
+
       if (button->prefill)
       {
         m_console.ClearInput();
