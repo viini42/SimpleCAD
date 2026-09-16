@@ -499,12 +499,14 @@ namespace
   void TestRibbonHitTesting()
   {
     const simple_cad::Ribbon ribbon;
-    CHECK(ribbon.Buttons().size() == 6);
+    CHECK(ribbon.Buttons().size() == 7);
     CHECK(ribbon.Swatches().size() == simple_cad::PALETTE.size());
-    CHECK(ribbon.Sections().size() == 2);
+    CHECK(ribbon.Sections().size() == 3);
     CHECK(ribbon.Sections()[0].title == "File");
     CHECK(ribbon.Sections()[1].title == "Creation");
+    CHECK(ribbon.Sections()[2].title == "Edit");
     CHECK(ribbon.Sections()[0].right < ribbon.Sections()[1].left);
+    CHECK(ribbon.Sections()[1].right < ribbon.Sections()[2].left);
 
     for (const simple_cad::Ribbon::Button& button : ribbon.Buttons())
     {
@@ -543,7 +545,18 @@ namespace
         std::ranges::find(ribbon.Buttons(), label, &simple_cad::Ribbon::Button::label);
       CHECK(it != ribbon.Buttons().end());
       CHECK(it != ribbon.Buttons().end() && !it->prefill);
+      CHECK(it != ribbon.Buttons().end() && !it->requires_selection);
     }
+
+    // Delete only makes sense with something selected; Ribbon just tags it that way for
+    // Application/Renderer to act on — it doesn't know about AppState itself.
+    const auto delete_it = std::ranges::find(ribbon.Buttons(),
+                                             std::string_view{ "Delete" },
+                                             &simple_cad::Ribbon::Button::label);
+    CHECK(delete_it != ribbon.Buttons().end());
+    CHECK(delete_it != ribbon.Buttons().end() && delete_it->requires_selection);
+    CHECK(delete_it != ribbon.Buttons().end() && !delete_it->prefill);
+    CHECK(delete_it != ribbon.Buttons().end() && delete_it->command == "delete");
   }
 } // namespace
 
