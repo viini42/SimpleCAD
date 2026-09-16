@@ -15,6 +15,7 @@
 #include "ui/command_console.hpp"
 #include "ui/ribbon.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <fstream>
@@ -423,16 +424,21 @@ namespace
   void TestRibbonHitTesting()
   {
     const simple_cad::Ribbon ribbon;
-    CHECK(ribbon.Buttons().size() == 4);
+    CHECK(ribbon.Buttons().size() == 6);
     CHECK(ribbon.Swatches().size() == simple_cad::PALETTE.size());
+    CHECK(ribbon.Sections().size() == 2);
+    CHECK(ribbon.Sections()[0].title == "File");
+    CHECK(ribbon.Sections()[1].title == "Creation");
+    CHECK(ribbon.Sections()[0].right < ribbon.Sections()[1].left);
 
     for (const simple_cad::Ribbon::Button& button : ribbon.Buttons())
     {
       const simple_cad::Vec2 center{ button.bounds.x + button.bounds.w / 2.0,
                                      button.bounds.y + button.bounds.h / 2.0 };
-      const auto command = ribbon.HitTestButton(center);
-      CHECK(command.has_value());
-      CHECK(command.has_value() && *command == button.command);
+      const auto hit = ribbon.HitTestButton(center);
+      CHECK(hit.has_value());
+      CHECK(hit.has_value() && hit->command == button.command);
+      CHECK(hit.has_value() && hit->prefill == button.prefill);
     }
 
     for (const simple_cad::Ribbon::Swatch& swatch : ribbon.Swatches())
@@ -447,6 +453,22 @@ namespace
     CHECK(!ribbon.HitTestButton({ -100.0, -100.0 }).has_value());
     CHECK(!ribbon.HitTestSwatch({ -100.0, -100.0 }).has_value());
     CHECK(!ribbon.HitTestButton({ 10.0, ribbon.Height() + 500.0 }).has_value());
+
+    // Save/Open need a path, so they pre-fill the console instead of running immediately.
+    for (const std::string_view label : { "Save", "Open" })
+    {
+      const auto it =
+        std::ranges::find(ribbon.Buttons(), label, &simple_cad::Ribbon::Button::label);
+      CHECK(it != ribbon.Buttons().end());
+      CHECK(it != ribbon.Buttons().end() && it->prefill);
+    }
+    for (const std::string_view label : { "Point", "Line", "Circle", "Polyline" })
+    {
+      const auto it =
+        std::ranges::find(ribbon.Buttons(), label, &simple_cad::Ribbon::Button::label);
+      CHECK(it != ribbon.Buttons().end());
+      CHECK(it != ribbon.Buttons().end() && !it->prefill);
+    }
   }
 } // namespace
 
