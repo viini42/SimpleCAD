@@ -51,6 +51,7 @@ namespace simple_cad
     void DrawCircle(const CircleShape& shape, Color color, const Camera& camera);
     void DrawRect(const RectShape& shape, Color color, const Camera& camera);
     void DrawPolyline(const PolylineShape& shape, Color color, const Camera& camera);
+    void DrawSelectionHighlight(const Scene& scene, const AppState& state, const Camera& camera);
     void DrawCursorMarker(Vec2 world_pos, const Camera& camera);
     void DrawObjectSnapIndicator(Vec2 world_pos, const Camera& camera);
     void DrawPendingPreview(PendingCommand pending,

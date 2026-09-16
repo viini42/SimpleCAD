@@ -50,6 +50,10 @@ namespace simple_cad
     // on, else the grid-snapped point when grid snap is on, else the raw world point.
     [[nodiscard]] SnapResolution ResolveSnap(Vec2 screen_pos) const;
 
+    // Id of the primitive whose outline is closest to `screen_pos`, within a pixel
+    // radius, or std::nullopt when nothing in the scene is close enough.
+    [[nodiscard]] std::optional<std::uint64_t> FindPrimitiveNear(Vec2 screen_pos) const;
+
     struct SdlWindowDeleter
     {
       void operator()(SDL_Window* window) const { SDL_DestroyWindow(window); }

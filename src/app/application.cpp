@@ -1,6 +1,7 @@
 #include "app/application.hpp"
 
 #include "core/snap.hpp"
+#include "geometry/hit_test.hpp"
 #include "geometry/object_snap.hpp"
 
 #include <optional>
@@ -13,6 +14,7 @@ namespace
   constexpr int DEFAULT_WINDOW_HEIGHT = 800;
   constexpr double WHEEL_ZOOM_STEP = 1.1;
   constexpr double OBJECT_SNAP_PIXEL_RADIUS = 10.0;
+  constexpr double SELECT_PIXEL_RADIUS = 8.0;
 
   SDL_Window* CreateAppWindow()
   {
@@ -133,8 +135,13 @@ void simple_cad::Application::HandleKeyDown(const SDL_KeyboardEvent& event)
   case SDLK_ESCAPE:
     if (m_interpreter.HasPendingPoint())
       m_interpreter.Cancel();
-    else
+    else if (!m_console.InputBuffer().empty())
       m_console.ClearInput();
+    else
+      m_state.selected_primitive_id.reset();
+    break;
+  case SDLK_DELETE:
+    m_interpreter.Execute("delete");
     break;
   case SDLK_F2:
     m_interpreter.Execute("zoom fit");
@@ -184,6 +191,11 @@ void simple_cad::Application::HandleMouseButtonDown(const SDL_MouseButtonEvent& 
       m_interpreter.SubmitPoint(ResolveSnap(screen).point);
       return;
     }
+
+    // Idle click: select whatever primitive is closest to the cursor, or deselect when
+    // nothing is close enough (including a click on genuinely empty canvas).
+    m_state.selected_primitive_id = FindPrimitiveNear(screen);
+    return;
   }
 
   if (event.button == SDL_BUTTON_MIDDLE)
@@ -280,4 +292,25 @@ simple_cad::Application::SnapResolution simple_cad::Application::ResolveSnap(Vec
     return { SnapToGrid(world, m_state.grid_size), false };
 
   return { world, false };
+}
+
+std::optional<std::uint64_t> simple_cad::Application::FindPrimitiveNear(Vec2 screen_pos) const
+{
+  const Vec2 world_point = m_camera.ScreenToWorld(screen_pos);
+  const double world_tolerance = SELECT_PIXEL_RADIUS / m_camera.Scale();
+
+  std::optional<std::uint64_t> best_id;
+  double best_distance = world_tolerance;
+
+  for (const Primitive& primitive : m_scene.Primitives())
+  {
+    const double distance = DistanceToShape(world_point, primitive.shape);
+    if (distance <= best_distance)
+    {
+      best_distance = distance;
+      best_id = primitive.id;
+    }
+  }
+
+  return best_id;
 }

@@ -28,6 +28,8 @@ namespace
   constexpr simple_cad::Color SWATCH_SELECTED_BORDER_COLOR{ 230, 200, 60, 255 };
   constexpr simple_cad::Color SECTION_TITLE_COLOR{ 140, 145, 155, 255 };
   constexpr simple_cad::Color SECTION_DIVIDER_COLOR{ 55, 58, 64, 255 };
+  constexpr simple_cad::Color SELECTION_COLOR{ 255, 90, 200, 255 };
+  constexpr float SELECTION_MARGIN_PX = 6.0f;
 
   constexpr float LINE_HEIGHT = 14.0f;
   constexpr float PADDING = 6.0f;
@@ -63,6 +65,7 @@ void simple_cad::Renderer::DrawFrame(const FrameContext& context)
   DrawGrid(context.camera, context.state);
   DrawAxes(context.camera);
   DrawPrimitives(context.scene, context.camera);
+  DrawSelectionHighlight(context.scene, context.state, context.camera);
 
   if (context.show_cursor_marker)
   {
@@ -242,6 +245,32 @@ void simple_cad::Renderer::DrawPolyline(const PolylineShape& shape,
   SDL_RenderLines(m_renderer, screen_points.data(), static_cast<int>(screen_points.size()));
 }
 
+void simple_cad::Renderer::DrawSelectionHighlight(const Scene& scene,
+                                                  const AppState& state,
+                                                  const Camera& camera)
+{
+  if (!state.selected_primitive_id)
+    return;
+
+  const auto& primitives = scene.Primitives();
+  const auto it = std::ranges::find(primitives, *state.selected_primitive_id, &Primitive::id);
+  if (it == primitives.end())
+    return;
+
+  const Rect2D bounds = ComputeBounds(it->shape);
+  const Vec2 screen_a = camera.WorldToScreen(bounds.min);
+  const Vec2 screen_b = camera.WorldToScreen(bounds.max);
+
+  const float left = static_cast<float>(std::min(screen_a.x, screen_b.x)) - SELECTION_MARGIN_PX;
+  const float top = static_cast<float>(std::min(screen_a.y, screen_b.y)) - SELECTION_MARGIN_PX;
+  const float right = static_cast<float>(std::max(screen_a.x, screen_b.x)) + SELECTION_MARGIN_PX;
+  const float bottom = static_cast<float>(std::max(screen_a.y, screen_b.y)) + SELECTION_MARGIN_PX;
+
+  const SDL_FRect rect{ left, top, right - left, bottom - top };
+  SetDrawColor(SELECTION_COLOR);
+  SDL_RenderRect(m_renderer, &rect);
+}
+
 void simple_cad::Renderer::DrawCursorMarker(Vec2 world_pos, const Camera& camera)
 {
   const Vec2 screen = camera.WorldToScreen(world_pos);
@@ -401,7 +430,10 @@ void simple_cad::Renderer::DrawHud(const FrameContext& context)
     (context.state.grid_visible ? " [on]" : " [off]") +
     "  snap=" + (context.state.snap_enabled ? std::string("[on]") : std::string("[off]")) +
     "  osnap=" + (context.state.object_snap_enabled ? std::string("[on]") : std::string("[off]")) +
-    "  color=" + std::string(ColorName(context.state.current_color));
+    "  color=" + std::string(ColorName(context.state.current_color)) + "  sel=" +
+    (context.state.selected_primitive_id
+       ? "#" + std::to_string(*context.state.selected_primitive_id)
+       : std::string("none"));
   DrawText(PADDING, cursor_y, status, STATUS_TEXT_COLOR);
   cursor_y += LINE_HEIGHT;
 
