@@ -62,12 +62,18 @@ target_compile_features(simple_cad_core PUBLIC cxx_std_23)
 
 if(MSVC)
   target_compile_options(simple_cad_core PRIVATE /W4)
+  # Sources are UTF-8 (comments use em dashes); without /utf-8 MSVC reads them in the
+  # system code page. PUBLIC so the executable and the tests compile the same way.
+  target_compile_options(simple_cad_core PUBLIC /utf-8 /permissive- /Zc:__cplusplus)
 else()
   target_compile_options(simple_cad_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
 add_executable(simple_cad src/main.cpp)
 target_link_libraries(simple_cad PRIVATE simple_cad_core)
+# A GUI-subsystem executable on Windows, so no console window opens next to the app.
+# SDL_main.h (included by main.cpp) supplies the WinMain entry point this requires.
+set_target_properties(simple_cad PROPERTIES WIN32_EXECUTABLE TRUE)
 
 enable_testing()
 add_subdirectory(tests)
