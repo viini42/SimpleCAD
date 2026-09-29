@@ -3,6 +3,7 @@
 #include "command/command_tokenizer.hpp"
 #include "core/color.hpp"
 #include "core/snap.hpp"
+#include "core/text_utils.hpp"
 #include "core/vec2.hpp"
 #include "geometry/hit_test.hpp"
 #include "geometry/object_snap.hpp"
@@ -19,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <string_view>
 #include <variant>
@@ -494,6 +496,36 @@ namespace
 
     interpreter.Execute("open /no/such/file.cad");
     CHECK(scene.Primitives().size() == 2); // unchanged on failure
+
+    // Quoted paths (Windows Explorer's "Copy as path") have their quotes stripped.
+    interpreter.Execute("clear");
+    interpreter.Execute("open \"" + path + "\"");
+    CHECK(scene.Primitives().size() == 2);
+  }
+
+  void TestStripSurroundingQuotes()
+  {
+    CHECK(simple_cad::StripSurroundingQuotes("\"C:\\a b\\c.cad\"") == "C:\\a b\\c.cad");
+    CHECK(simple_cad::StripSurroundingQuotes("plain.cad") == "plain.cad");
+    CHECK(simple_cad::StripSurroundingQuotes("\"half.cad") == "\"half.cad");
+    CHECK(simple_cad::StripSurroundingQuotes("\"") == "\"");
+    CHECK(simple_cad::StripSurroundingQuotes("\"\"").empty());
+  }
+
+  // Paths arrive as UTF-8 from SDL text input; non-ASCII names must round-trip on every
+  // platform (on Windows this is what PathFromUtf8 exists for).
+  void TestNonAsciiModelPath()
+  {
+    simple_cad::Scene scene;
+    scene.AddPoint({ 1.0, 2.0 }, {});
+
+    const std::string path = std::string(SIMPLECAD_TEST_SCRATCH_DIR) +
+                             "/modelo_\xC3\xA7\xC3\xA3o_\xE6\xA8\xA1\xE5\x9E\x8B.cad";
+    CHECK(simple_cad::WriteModelFile(scene, path));
+    CHECK(std::filesystem::exists(simple_cad::PathFromUtf8(path)));
+
+    const auto loaded = simple_cad::ReadModelFile(path);
+    CHECK(loaded.has_value() && loaded->Primitives().size() == 1);
   }
 
   void TestRibbonHitTesting()
@@ -581,6 +613,8 @@ int main()
   TestModelWriterAndReader();
   TestModelReaderRejectsInvalidContent();
   TestSaveOpenCommandFlow();
+  TestStripSurroundingQuotes();
+  TestNonAsciiModelPath();
   TestRibbonHitTesting();
 
   std::fprintf(stdout, "%d/%d checks passed\n", g_checks - g_failures, g_checks);
