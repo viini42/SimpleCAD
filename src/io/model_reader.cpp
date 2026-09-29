@@ -1,5 +1,7 @@
 #include "io/model_reader.hpp"
 
+#include "core/text_utils.hpp"
+
 #include <array>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -126,7 +128,7 @@ namespace
 
 std::optional<simple_cad::Scene> simple_cad::ReadModelFile(const std::string& file_path)
 {
-  std::ifstream in(file_path);
+  std::ifstream in(PathFromUtf8(file_path));
   if (!in.is_open())
     return std::nullopt;
 

@@ -1,10 +1,12 @@
 #include "io/xy_reader.hpp"
 
+#include "core/text_utils.hpp"
+
 #include <fstream>
 
 std::optional<simple_cad::XyDocument> simple_cad::ReadXyFile(const std::string& file_path)
 {
-  std::ifstream in(file_path);
+  std::ifstream in(PathFromUtf8(file_path));
   if (!in.is_open())
     return std::nullopt;
 

@@ -1,5 +1,7 @@
 #include "io/model_writer.hpp"
 
+#include "core/text_utils.hpp"
+
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <type_traits>
@@ -76,7 +78,7 @@ bool simple_cad::WriteModelFile(const Scene& scene, const std::string& file_path
     { "primitives", std::move(primitives) },
   };
 
-  std::ofstream out(file_path);
+  std::ofstream out(PathFromUtf8(file_path));
   if (!out.is_open())
     return false;
 

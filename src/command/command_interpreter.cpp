@@ -622,7 +622,7 @@ void simple_cad::CommandInterpreter::CmdImport(const std::vector<std::string>& a
     return;
   }
 
-  const std::string path = JoinWithSpaces(args);
+  const std::string path{ StripSurroundingQuotes(JoinWithSpaces(args)) };
   const auto result = ImportXyFile(m_scene, path, m_state.current_color);
   if (!result)
   {
@@ -647,7 +647,7 @@ void simple_cad::CommandInterpreter::CmdSave(const std::vector<std::string>& arg
     return;
   }
 
-  const std::string path = JoinWithSpaces(args);
+  const std::string path{ StripSurroundingQuotes(JoinWithSpaces(args)) };
   if (!WriteModelFile(m_scene, path))
   {
     LogError("SAVE: could not write '" + path + "'.");
@@ -665,7 +665,7 @@ void simple_cad::CommandInterpreter::CmdOpen(const std::vector<std::string>& arg
     return;
   }
 
-  const std::string path = JoinWithSpaces(args);
+  const std::string path{ StripSurroundingQuotes(JoinWithSpaces(args)) };
   auto loaded = ReadModelFile(path);
   if (!loaded)
   {
