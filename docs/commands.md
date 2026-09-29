@@ -89,9 +89,12 @@ different scale from the default view.
 The path (for `import`, `save` and `open` alike) is everything after the
 command word, so `import my file.xy` works for a path with (single) spaces;
 it cannot contain a comma or repeated whitespace, since those are the
-console's token separators. Import fails (with an error logged, nothing
-added) if the file is missing or isn't valid HED_XY content; an edge with
-fewer than 2 points is skipped rather than failing the whole import.
+console's token separators. One pair of surrounding double quotes is
+stripped, so a quoted path in the form Windows Explorer's "Copy as path"
+produces (`"C:\Users\me\drawing.cad"`) also works. Import fails (with an
+error logged, nothing added) if the file is missing or isn't valid HED_XY
+content; an edge with fewer than 2 points is skipped rather than failing the
+whole import.
 
 | Command | Aliases | Arguments | Effect |
 |---|---|---|---|

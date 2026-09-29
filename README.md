@@ -43,6 +43,29 @@ Run the test suite (pure-logic unit tests — no window is created):
 ctest --test-dir build
 ```
 
+### Windows
+
+Visual Studio 2022 (17.6+, with the "Desktop development with C++" workload)
+provides everything needed — MSVC, CMake and Ninja. SDL3 needs no extra
+system packages on Windows. From a *Developer PowerShell for VS 2022*:
+
+```powershell
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build
+.\build\simple_cad.exe
+ctest --test-dir build
+```
+
+Or let CMake generate a Visual Studio solution instead
+(`cmake -S . -B build -G "Visual Studio 17 2022"`, then
+`cmake --build build --config RelWithDebInfo`); the executable then lands in
+`build\RelWithDebInfo\`, and `ctest` needs `-C RelWithDebInfo`.
+
+SDL3 is linked statically, so `simple_cad.exe` is self-contained. It is a GUI
+application (no console window); a fatal startup error is shown in a message
+box. File paths typed into the console may contain non-ASCII characters and
+may be wrapped in quotes, as Explorer's "Copy as path" produces.
+
 ## Using the app
 
 The bottom panel is always listening for keyboard input — there is no separate
