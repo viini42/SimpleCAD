@@ -43,6 +43,7 @@ add_library(simple_cad_core STATIC
   src/geometry/hit_test.cpp
   src/scene/scene.cpp
   src/io/xy_reader.cpp
+  src/io/xy_writer.cpp
   src/io/xy_importer.cpp
   src/io/model_writer.cpp
   src/io/model_reader.cpp
