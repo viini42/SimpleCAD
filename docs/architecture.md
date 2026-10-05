@@ -33,10 +33,13 @@ on earlier ones).
     outright (no partial load), since — unlike an externally-produced HED_XY
     file — this format is entirely under this app's control, so anything
     malformed means something is actually wrong.
-  - `xy_reader.hpp` parses the `HED_XY` text format (a topology dump:
-    numbered vertices, plus edges that carry their own discretized point
-    list) into plain data (`XyDocument`), with no dependency on `Scene` —
-    it's pure parsing, testable on its own. `xy_importer.hpp` is the thin
+  - `xy_document.hpp` holds the plain data for the `HED_XY` text format (a
+    topology dump: numbered vertices, plus edges that carry their own
+    discretized point list) as `XyDocument`. `xy_reader.hpp` parses a file
+    into it and `xy_writer.hpp` serializes one back out (full double
+    precision, so a write→read round trip is lossless); the two depend only
+    on `xy_document.hpp`, never on each other, and neither knows about
+    `Scene`, so each is testable on its own. `xy_importer.hpp` is the thin
     glue on top that turns an `XyDocument` into primitives (`AddPoint` per
     vertex, `AddPolyline` per edge, skipping any edge with fewer than 2
     points) *added into* an existing `Scene&` — this is `import`, a one-shot
