@@ -12,6 +12,7 @@
 #include "io/model_writer.hpp"
 #include "io/xy_importer.hpp"
 #include "io/xy_reader.hpp"
+#include "io/xy_writer.hpp"
 #include "render/camera.hpp"
 #include "scene/scene.hpp"
 #include "ui/command_console.hpp"
@@ -399,6 +400,51 @@ namespace
     CHECK(document->edges.back().points.size() == 1);
   }
 
+  void TestXyWriterRoundTrip()
+  {
+    simple_cad::XyDocument original;
+    original.vertices = { { 1, { 0.1, -2.5 } }, { 7, { 123456.789012345, 1e-9 } } };
+    original.edges = {
+      { 3, 1, 7, { { 0.1, -2.5 }, { 50.0, 1.0 / 3.0 }, { 123456.789012345, 1e-9 } } },
+      { 4, 7, 7, {} },
+    };
+
+    const std::string path = std::string(SIMPLECAD_TEST_SCRATCH_DIR) + "/xy_roundtrip.xy";
+    CHECK(simple_cad::WriteXyFile(original, path));
+
+    const auto restored = simple_cad::ReadXyFile(path);
+    CHECK(restored.has_value());
+    if (!restored)
+      return;
+
+    CHECK(restored->vertices.size() == original.vertices.size());
+    for (std::size_t i = 0; i < original.vertices.size() && i < restored->vertices.size(); ++i)
+    {
+      CHECK(restored->vertices[i].id == original.vertices[i].id);
+      // Exact equality: the writer must not lose any precision.
+      CHECK(restored->vertices[i].position.x == original.vertices[i].position.x);
+      CHECK(restored->vertices[i].position.y == original.vertices[i].position.y);
+    }
+
+    CHECK(restored->edges.size() == original.edges.size());
+    for (std::size_t i = 0; i < original.edges.size() && i < restored->edges.size(); ++i)
+    {
+      const auto& a = original.edges[i];
+      const auto& b = restored->edges[i];
+      CHECK(b.id == a.id);
+      CHECK(b.start_id == a.start_id);
+      CHECK(b.end_id == a.end_id);
+      CHECK(b.points.size() == a.points.size());
+      for (std::size_t j = 0; j < a.points.size() && j < b.points.size(); ++j)
+      {
+        CHECK(b.points[j].x == a.points[j].x);
+        CHECK(b.points[j].y == a.points[j].y);
+      }
+    }
+
+    CHECK(!simple_cad::WriteXyFile(original, "/no/such/dir/out.xy"));
+  }
+
   void TestXyImport()
   {
     simple_cad::Scene scene;
@@ -609,6 +655,7 @@ int main()
   TestObjectSnapCandidates();
   TestPolylineCommandFlow();
   TestXyReader();
+  TestXyWriterRoundTrip();
   TestXyImport();
   TestModelWriterAndReader();
   TestModelReaderRejectsInvalidContent();
