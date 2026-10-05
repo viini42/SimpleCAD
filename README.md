@@ -43,6 +43,27 @@ Run the test suite (pure-logic unit tests — no window is created):
 ctest --test-dir build
 ```
 
+### CMake presets
+
+`CMakePresets.json` defines configure, build and test presets (all Ninja) for
+each compiler in Debug and Release; each builds into `build-<preset>/`:
+
+| Host    | Presets                                                        |
+| ------- | -------------------------------------------------------------- |
+| Windows | `msvc-debug`, `msvc-release`                                   |
+| Linux   | `gcc-debug`, `gcc-release`, `clang-debug`, `clang-release`     |
+
+Only the current host's presets are listed (`cmake --list-presets=all`).
+The MSVC presets expect the MSVC environment to be set up already — run them
+from a *Developer PowerShell for VS*, or from an IDE that does this itself
+(Visual Studio, VS Code's CMake Tools, CLion).
+
+```sh
+cmake --preset gcc-release
+cmake --build --preset gcc-release
+ctest --preset gcc-release
+```
+
 ### Windows
 
 Visual Studio 2022 (17.6+, with the "Desktop development with C++" workload)
